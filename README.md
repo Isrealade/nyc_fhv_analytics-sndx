@@ -7,44 +7,74 @@
 
 ## Project Structure
 
-```
-/backend
-  src/
-    server.js
-    setup/
-      db.js
-      init.sql
-      routes/
-        drivers.js
-        stats.js
-      services/
-        fetchAndStore.js
-      utils/
-        validation.js
-  package.json
-  Dockerfile
-  .env.example
-/frontend
-  src/
-    App.jsx
-    main.jsx
-    styles.css
-    pages/
-      Dashboard.jsx
-      Search.jsx
-    components/
-      BoroughChart.jsx
-    lib/
-      api.js
-  package.json
-  Dockerfile
-  tailwind.config.js
-  postcss.config.js
-  vite.config.js
 
-docker-compose.yml
-README.md
 ```
+├── .github/
+│   └── workflows/
+│       ├── ci-backend.yaml
+│       └── ci-frontend.yaml
+├── backend/
+│   ├── __tests__/
+│   │   └── utils.test.js
+│   ├── src/
+│   │   ├── setup/
+│   │   │   ├── routes/
+│   │   │   │   ├── drivers.js
+│   │   │   │   └── stats.js
+│   │   │   ├── services/
+│   │   │   │   ├── fetchAndStore.js
+│   │   │   │   └── populateTrends.js
+│   │   │   ├── utils/
+│   │   │   │   └── validation.js
+│   │   │   ├── db.js
+│   │   │   └── init.sql
+│   │   └── server.js
+│   ├── .dockerignore
+│   ├── .env.example
+│   ├── Dockerfile
+│   ├── jest.config.js
+│   ├── package-lock.json
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── BoroughChart.jsx
+│   │   │   └── TrendChart.jsx
+│   │   ├── lib/
+│   │   │   └── api.js
+│   │   ├── pages/
+│   │   │   ├── Dashboard.jsx
+│   │   │   └── Search.jsx
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   └── styles.css
+│   ├── .dockerignore
+│   ├── .env.example 
+│   ├── Dockerfile
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
+│   └── vite.config.js
+├── .gitignore
+├── README.md
+├── docker-compose.yml
+├── package-lock.json
+└── sonar-project.properties
+```
+## Continuous Integration
+
+This project uses GitHub Actions for CI on both frontend and backend:
+
+- **Frontend CI** ([.github/workflows/ci-frontend.yaml](.github/workflows/ci-frontend.yaml)):  
+  Runs on pushes and pull requests to `main` affecting the `frontend/` directory.  
+  Steps include dependency installation, secret scanning, SonarQube analysis, and build verification.
+
+- **Backend CI** ([.github/workflows/ci-backend.yaml](.github/workflows/ci-backend.yaml)):  
+  Runs on pushes and pull requests to `main` affecting the `backend/` directory.  
+  Steps include dependency installation, linting, testing, secret scanning, and SonarQube analysis.
+
 
 ## Backend Setup (Local)
 
