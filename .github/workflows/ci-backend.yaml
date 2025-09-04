@@ -1,0 +1,57 @@
+name: Backend CI
+
+on: 
+    push:
+        paths:
+            - backend/**
+        branches:
+            - main
+    pull_request:
+        paths:
+            - backend/**
+        branches:
+            - main
+    workflow_dispatch:
+
+jobs: 
+    code-validation:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: backend/
+        steps:
+            - name: Checkout COde
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                node-version: 22.x
+                cache: 'npm'
+
+            - name: Install dependencies 
+              run: npm install
+
+            - name: Lint test
+              run: npm run lint
+
+            - name: Node test
+              run: npm run test
+
+            - name: Secret Scanning
+              uses: trufflesecurity/trufflehog@main
+              with:
+                extra_args: --results=verified,unknown
+
+            - name: SonarQube Scan
+              uses: SonarSource/sonarqube-scan-action@v5
+              env:
+                SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+            - name: SonarQube Quality Gate check
+              id: sonarqube-quality-gate-check
+              uses: sonarsource/sonarqube-quality-gate-action@master
+              with:
+                pollingTimeoutSec: 600
+              env:
+                SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

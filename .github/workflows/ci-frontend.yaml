@@ -1,0 +1,66 @@
+name: Frontend CI
+
+on: 
+    push:
+        paths: 
+            - frontend/**
+        branches: 
+            - main
+    pull_request:
+        paths:
+            - frontend/**
+        branches:
+            - main
+    workflow_dispatch:
+
+jobs:
+    code-validation:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: frontend/
+        steps:
+            - name: Checkout COde
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                node-version: 22.x
+                cache: 'npm'
+
+            - name: Install dependencies 
+              run: npm install
+
+            - name: Secret Scanning
+              uses: trufflesecurity/trufflehog@main
+              with:
+                extra_args: --results=verified,unknown
+
+            - name: SonarQube Scan
+              uses: SonarSource/sonarqube-scan-action@v5
+              env:
+                SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+            - name: SonarQube Quality Gate check
+              id: sonarqube-quality-gate-check
+              uses: sonarsource/sonarqube-quality-gate-action@master
+              with:
+                pollingTimeoutSec: 600
+              env:
+                SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+            - name: Build project & confirm build 
+              run: |
+                echo "Building project...."
+                npm run build
+                echo "confirming build output...."
+                if [ ! -d "dist" ]; then
+                echo "Build output directory 'dist' not found!"
+                exit 1
+                fi
+                echo "Build successful - output directory exists"
+                ls -la dist/
+
+
+            
