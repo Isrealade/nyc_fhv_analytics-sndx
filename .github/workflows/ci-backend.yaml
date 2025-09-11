@@ -55,3 +55,48 @@ jobs:
                 pollingTimeoutSec: 600
               env:
                 SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+    build-and-push: 
+        runs-on: ubuntu-latest
+        needs: code-validation
+        defaults:
+              run:
+                  working-directory: frontend/
+        steps: 
+          - name: Checkout Code
+            uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
+          - name: Configure AWS Credentials
+            uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v4
+            with:
+              aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+              aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+              aws-region: ${{ vars.REGION }}
+
+          - name: Login to Amazon ECR
+            id: login-ecr
+            uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 #v2.0.1
+
+          - name: Set image variables
+            id: vars
+            run: |
+              echo "REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
+              echo "REPOSITORY=backend-service" >> $GITHUB_ENV
+              echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
+
+          - name: Build docker image
+            run: |
+              docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+
+          - name: Run Trivy vulnerability scanner
+            uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 #v0.33.1
+            with:
+              image-ref: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ env.IMAGE_TAG }}
+              format: table
+              severity: HIGH,CRITICAL
+              exit-code: '1'   # ❌ fail pipeline if high/critical issues found
+
+          - name: Push docker image to Amazon ECR
+            if: success()   # ✅ only push if Trivy passes
+            run: |
+              docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG

@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: public.ecr.aws/docker/library/postgres:15-alpine
+    image: postgres:15-alpine
     container_name: fhv-postgres
     environment:
       POSTGRES_PASSWORD: postgres
