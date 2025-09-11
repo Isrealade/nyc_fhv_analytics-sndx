@@ -5,7 +5,7 @@ WORKDIR /app
 
 COPY package*.json .
 
-RUN npm install --only=production
+RUN npm install --only=production -ignore-scripts
 
 FROM node:20-alpine AS run 
 

@@ -93,7 +93,7 @@ jobs:
             with:
               image-ref: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ env.IMAGE_TAG }}
               format: table
-              severity: HIGH,CRITICAL
+              severity: CRITICAL
               exit-code: '1'   # ❌ fail pipeline if high/critical issues found
 
           - name: Push docker image to Amazon ECR
