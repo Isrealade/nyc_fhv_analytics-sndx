@@ -23,9 +23,9 @@ module "vpc" {
 }
 
 module "eks" {
-  source  = "terraform-aws-modules/eks/aws"
-  version = "~> 21.0"
-  depends_on = [ module.vpc ]
+  source     = "terraform-aws-modules/eks/aws"
+  version    = "~> 21.0"
+  depends_on = [module.vpc]
 
   name               = "css-cluster"
   kubernetes_version = "1.33"
@@ -51,10 +51,12 @@ module "eks" {
 }
 
 module "ecr" {
-  source = "terraform-aws-modules/ecr/aws"
+  source  = "terraform-aws-modules/ecr/aws"
   version = "3.0.1"
 
-  repository_name = "css-repository"
+  for_each = toset(var.repositories)
+
+  repository_name = each.value
 
   repository_read_write_access_arns = [module.eks.cluster_iam_role_arn]
   repository_lifecycle_policy = jsonencode({
@@ -90,7 +92,7 @@ module "ecr" {
           filter_type = "WILDCARD"
         }
       ]
-    }, {
+      }, {
       scan_frequency = "CONTINUOUS_SCAN"
       filter = [
         {
@@ -104,7 +106,7 @@ module "ecr" {
   tags = {
     Terraform   = "true"
     Environment = "production"
-    Project     = "css-app"
+    Project     = each.value
     Environment = "dev"
   }
 }
