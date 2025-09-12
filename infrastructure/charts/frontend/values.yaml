@@ -60,10 +60,22 @@ ingress:
   enabled: true
   className: "nginx"
   annotations: 
-    kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
+        # Tell Kubernetes to use the AWS ALB Ingress Controller
+    kubernetes.io/ingress.class: alb
+
+    # Attach your ACM certificate
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:501818865030:certificate/edd157c8-0ebe-4aa0-8759-42ef1ed57952
+
+    # Make the ALB internet-facing
+    alb.ingress.kubernetes.io/scheme: internet-facing
+
+    # Redirect HTTP traffic to HTTPS automatically
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+
+    # Make ALB listen only on HTTPS 443
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
   hosts:
-    - host: testing.local
+    - host: css.redeploy.online
       paths:
         - path: /
           pathType: Prefix
@@ -87,9 +99,7 @@ ingress:
               port:
                 number: 4000
   tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+
 
 resources:
   limits:
