@@ -204,17 +204,20 @@ config:
 # refer to https://argocd-image-updater.readthedocs.io/en/stable/configuration/registries/#specifying-credentials-for-accessing-container-registries for more info
 authScripts:
   # -- Whether to mount the defined scripts that can be used to authenticate with a registry, the scripts will be mounted at `/scripts`
-  enabled: false
+  enabled: true
   # -- Name of the authentication scripts ConfigMap
   name: argocd-image-updater-authscripts
   # -- Map of key-value pairs where the key consists of the name of the script and the value the contents.
   ## Expect the script to output Docker credentials in the form: <username>:<password>
   ## Authentication scripts can be used for various cloud providers like ECR or Azure Workload Identity.
   ## For Azure Workload Identity, you can place your authentication script here to handle token acquisition.
-  scripts: {}
-    # auth1.sh: |
-    #   #!/bin/sh
-    #   echo "auth script 1 here"
+  scripts:
+    auth1.sh: |
+      #!/bin/sh
+      REGION="us-east-1"
+      ACCOUNT_ID="501818865030"
+      PASSWORD=$(aws ecr get-login-password --region $REGION)
+      echo "AWS:$PASSWORD"
     # auth2.sh: |
     #   #!/bin/sh
     #   echo "auth script 2 here"
@@ -229,7 +232,8 @@ serviceAccount:
   # -- Specifies whether a service account should be created
   create: true
   # -- Annotations to add to the service account
-  annotations: {}
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::501818865030:role/argocd-image-updater
   # Example for Azure Workload Identity:
     # azure.workload.identity/client-id: "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
   # -- Labels to add to the service account

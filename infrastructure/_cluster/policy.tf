@@ -50,3 +50,55 @@
 #   client_id_list  = ["sts.amazonaws.com"]
 # }
 
+resource "aws_iam_policy" "argocd_image_updater_ecr" {
+  name        = "ArgoCDImageUpdaterECRPolicy"
+  description = "Policy for ArgoCD Image Updater to access ECR"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = [
+          "ecr:GetAuthorizationToken",
+          "ecr:DescribeImages",
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+data "aws_iam_openid_connect_provider" "eks" {
+#   url = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
+  url = module.eks.cluster_oidc_issuer_url
+}
+
+resource "aws_iam_role" "argocd_image_updater" {
+  name = "ArgoCDImageUpdaterRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = data.aws_iam_openid_connect_provider.eks.arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "${replace(data.aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub" = "system:serviceaccount:argocd:argocd-image-updater"
+          }
+        }
+      }
+    ]
+  })
+}
+
+# Attach the ECR policy
+resource "aws_iam_role_policy_attachment" "argocd_image_updater_attach" {
+  role       = aws_iam_role.argocd_image_updater.name
+  policy_arn = aws_iam_policy.argocd_image_updater_ecr.arn
+}
