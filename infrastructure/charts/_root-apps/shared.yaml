@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: shared
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: git@github.com:Isrealade/nyc_fhv_analytics-sndx.git
+    targetRevision: HEAD
+    path: infrastructure/charts/shared
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: frontend
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

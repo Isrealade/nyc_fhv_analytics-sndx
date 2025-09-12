@@ -1,0 +1,109 @@
+## Network Policy to deny all Ingress & Egress Traffic in Default namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all-traffic
+  namespace: default
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+
+---
+## Network Policy to allow dns
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: default
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+
+---
+## Network Policy to for Frontend
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+      role: frontend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - {}
+  egress:
+    - to: 
+        - podSelector: 
+            matchLabels:
+              app: backend 
+              role: backend 
+
+---
+## Network Policy to for Backend
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+      role: backend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: 
+            matchLabels:
+              app: frontend 
+              role: frontend
+  egress:
+    - to: 
+        - podSelector: 
+            matchLabels:
+              app: postgresql 
+              role: database 
+
+---
+## Network Policy to for Database
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: database-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: postgresql
+      role: database
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector: 
+            matchLabels:
+              app: backend 
+              role: backend
