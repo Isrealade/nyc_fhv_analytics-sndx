@@ -11,11 +11,7 @@ COPY . .
 
 RUN npm run build
 
-FROM  nginx:1.27-alpine AS run
-
-COPY default.conf /etc/nginx/conf.d/default.conf
-
-COPY nginx.conf /etc/nginx/nginx.conf
+FROM  nginxinc/nginx-unprivileged:1.27-alpine AS run
 
 WORKDIR /usr/share/nginx/html
 
