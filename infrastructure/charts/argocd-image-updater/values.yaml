@@ -233,7 +233,7 @@ serviceAccount:
   create: true
   # -- Annotations to add to the service account
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::501818865030:role/argocd-image-updater
+    eks.amazonaws.com/role-arn: arn:aws:iam::501818865030:role/ArgoCDImageUpdaterRole
   # Example for Azure Workload Identity:
     # azure.workload.identity/client-id: "xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
   # -- Labels to add to the service account
