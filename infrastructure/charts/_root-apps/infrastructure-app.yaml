@@ -11,7 +11,7 @@ spec:
     path: infrastructure/charts/_root-apps       # <-- folder containing child apps
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: default
   syncPolicy:
     automated:
       prune: true

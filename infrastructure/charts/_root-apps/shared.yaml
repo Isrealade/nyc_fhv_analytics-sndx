@@ -11,7 +11,7 @@ spec:
     path: infrastructure/charts/shared
   destination:
     server: https://kubernetes.default.svc
-    namespace: frontend
+    namespace: default
   syncPolicy:
     automated:
       prune: true

@@ -11,7 +11,7 @@ spec:
     path: infrastructure/charts/kube-prometheus-stack
   destination:
     server: https://kubernetes.default.svc
-    namespace: frontend
+    namespace: monitoring
   syncPolicy:
     automated:
       prune: true
