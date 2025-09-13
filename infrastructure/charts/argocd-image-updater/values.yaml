@@ -204,7 +204,7 @@ config:
 # refer to https://argocd-image-updater.readthedocs.io/en/stable/configuration/registries/#specifying-credentials-for-accessing-container-registries for more info
 authScripts:
   # -- Whether to mount the defined scripts that can be used to authenticate with a registry, the scripts will be mounted at `/scripts`
-  enabled: false
+  enabled: true
   # -- Name of the authentication scripts ConfigMap
   name: argocd-image-updater-authscripts
   # -- Map of key-value pairs where the key consists of the name of the script and the value the contents.
