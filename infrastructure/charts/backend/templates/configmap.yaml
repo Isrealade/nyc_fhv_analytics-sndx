@@ -7,6 +7,4 @@ metadata:
 data:
     PGHOST: "postgres"
     PGPORT: "5432"
-    PGUSER: "postgres"
-    PGPASSWORD: "postgres"
     PGDATABASE: "fhv"
