@@ -63,6 +63,18 @@
         "elasticloadbalancing:RemoveTags"
       ],
       "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "wafv2:GetWebACL",
+        "wafv2:GetWebACLForResource",
+        "wafv2:AssociateWebACL",
+        "wafv2:DisassociateWebACL",
+        "wafv2:ListWebACLs",
+        "wafv2:ListResourcesForWebACL"
+      ],
+      "Resource": "*"
     }
   ]
 }
