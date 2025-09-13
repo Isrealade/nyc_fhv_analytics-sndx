@@ -71,6 +71,7 @@ ingress:
 
     # Redirect HTTP traffic to HTTPS automatically
     alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/target-type: ip
 
     # Make ALB listen only on HTTPS 443
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'

@@ -1,6 +1,6 @@
 module "vpc" {
   source  = "Isrealade/vpc/aws"
-  version = "1.0.1"
+  version = "1.1.0"
 
   name = "css-vpc"
   cidr = "10.0.0.0/16"
@@ -15,6 +15,16 @@ module "vpc" {
   enable_dns_hostnames = true
 
   ingress = []
+
+  public_subnet_tags = {
+    "kubernetes.io/role/elb" = "1"
+    "kubernetes.io/cluster/css-cluster" = "shared"
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/role/internal-elb" = "1"
+    "kubernetes.io/cluster/css-cluster" = "shared"
+  }
 
   tags = {
     Environment = "production"
