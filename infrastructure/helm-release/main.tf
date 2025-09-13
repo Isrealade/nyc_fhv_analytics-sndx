@@ -56,7 +56,7 @@ resource "helm_release" "aws_load_balancer_controller" {
 #   namespace  = "kube-system"
 #   repository = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
 #   chart      = "aws-ebs-csi-driver"
-#   version    = "1.20"  # Choose a version compatible with your EKS cluster
+#   version    = "2.48" 
 
 #   values = [
 #     yamlencode({

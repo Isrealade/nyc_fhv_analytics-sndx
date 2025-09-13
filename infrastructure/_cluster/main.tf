@@ -60,6 +60,10 @@ module "eks" {
 
   addons = {
 
+    aws-ebs-csi-driver = {
+      preserve = false
+    },
+
     metrics-server = {
       # addon_version = "latest"
       preserve = false
