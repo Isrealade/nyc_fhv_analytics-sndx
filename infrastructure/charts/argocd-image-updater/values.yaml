@@ -204,7 +204,7 @@ config:
 # refer to https://argocd-image-updater.readthedocs.io/en/stable/configuration/registries/#specifying-credentials-for-accessing-container-registries for more info
 authScripts:
   # -- Whether to mount the defined scripts that can be used to authenticate with a registry, the scripts will be mounted at `/scripts`
-  enabled: true
+  enabled: false
   # -- Name of the authentication scripts ConfigMap
   name: argocd-image-updater-authscripts
   # -- Map of key-value pairs where the key consists of the name of the script and the value the contents.
@@ -230,7 +230,7 @@ authScripts:
 
 serviceAccount:
   # -- Specifies whether a service account should be created
-  create: false
+  create: true
   # -- Annotations to add to the service account
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::501818865030:role/argocd-image-updater
@@ -242,7 +242,7 @@ serviceAccount:
   #  azure.workload.identity/use: "true"
   # -- The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template.
-  name: ""
+  name: argocd-image-updater
 
 # -- Pod Annotations for the deployment
 podAnnotations: {}

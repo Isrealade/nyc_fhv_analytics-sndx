@@ -134,7 +134,8 @@ resource "aws_iam_role" "argocd_image_updater" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "${replace(data.aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub" = "system:serviceaccount:argocd:argocd-image-updater"
+            "${replace(data.aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub" = "system:serviceaccount:argocd:argocd-image-updater",
+            "${replace(data.aws_iam_openid_connect_provider.eks.url, "https://", "")}:aud": "sts.amazonaws.com"
           }
         }
       }
