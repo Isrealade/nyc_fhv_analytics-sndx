@@ -17,12 +17,12 @@ module "vpc" {
   ingress = []
 
   public_subnet_tags = {
-    "kubernetes.io/role/elb" = "1"
+    "kubernetes.io/role/elb"            = "1"
     "kubernetes.io/cluster/css-cluster" = "shared"
   }
 
   private_subnet_tags = {
-    "kubernetes.io/role/internal-elb" = "1"
+    "kubernetes.io/role/internal-elb"   = "1"
     "kubernetes.io/cluster/css-cluster" = "shared"
   }
 

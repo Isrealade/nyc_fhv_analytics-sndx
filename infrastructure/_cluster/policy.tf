@@ -71,7 +71,89 @@ data "aws_eks_cluster_auth" "cluster" {
 resource "aws_iam_policy" "alb_controller" {
   name        = "eks-alb-controller-policy"
   description = "IAM policy for AWS Load Balancer Controller"
-  policy      = file("${path.module}/alb-controller-policy.json")
+  policy = jsonencode(
+    {
+      "Version" : "2012-10-17",
+      "Statement" : [
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "iam:CreateServiceLinkedRole"
+          ],
+          "Resource" : "*",
+          "Condition" : {
+            "StringEquals" : {
+              "iam:AWSServiceName" : "elasticloadbalancing.amazonaws.com"
+            }
+          }
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "ec2:Describe*",
+            "elasticloadbalancing:Describe*"
+          ],
+          "Resource" : "*"
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "acm:ListCertificates",
+            "acm:DescribeCertificate"
+          ],
+          "Resource" : "*"
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "ec2:AuthorizeSecurityGroupIngress",
+            "ec2:RevokeSecurityGroupIngress",
+            "ec2:CreateSecurityGroup",
+            "ec2:CreateTags",
+            "ec2:DeleteTags",
+            "ec2:DeleteSecurityGroup"
+          ],
+          "Resource" : "*"
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "elasticloadbalancing:CreateLoadBalancer",
+            "elasticloadbalancing:CreateTargetGroup",
+            "elasticloadbalancing:DeleteLoadBalancer",
+            "elasticloadbalancing:DeleteTargetGroup",
+            "elasticloadbalancing:ModifyLoadBalancerAttributes",
+            "elasticloadbalancing:ModifyTargetGroup",
+            "elasticloadbalancing:ModifyTargetGroupAttributes",
+            "elasticloadbalancing:RegisterTargets",
+            "elasticloadbalancing:DeregisterTargets",
+            "elasticloadbalancing:CreateListener",
+            "elasticloadbalancing:DeleteListener",
+            "elasticloadbalancing:ModifyListener",
+            "elasticloadbalancing:CreateRule",
+            "elasticloadbalancing:DeleteRule",
+            "elasticloadbalancing:ModifyRule",
+            "elasticloadbalancing:AddTags",
+            "elasticloadbalancing:RemoveTags"
+          ],
+          "Resource" : "*"
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "wafv2:GetWebACL",
+            "wafv2:GetWebACLForResource",
+            "wafv2:AssociateWebACL",
+            "wafv2:DisassociateWebACL",
+            "wafv2:ListWebACLs",
+            "wafv2:ListResourcesForWebACL"
+          ],
+          "Resource" : "*"
+        }
+      ]
+    }
+
+  )
 }
 
 resource "aws_iam_role" "alb_controller" {
