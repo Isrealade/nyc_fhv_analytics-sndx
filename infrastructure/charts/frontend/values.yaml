@@ -64,7 +64,7 @@ ingress:
     kubernetes.io/ingress.class: alb
 
     # Attach your ACM certificate
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:501818865030:certificate/13c4b228-6a2f-4eda-a9f4-9c47b8da17f6
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:501818865030:certificate/96c6447f-658b-445e-badb-114bb9496436
 
     # Make the ALB internet-facing
     alb.ingress.kubernetes.io/scheme: internet-facing
