@@ -64,6 +64,10 @@ module "eks" {
       preserve = false
     },
 
+    coredns = {
+      preserve = false
+    }
+
     metrics-server = {
       # addon_version = "latest"
       preserve = false

@@ -51,27 +51,6 @@ resource "helm_release" "aws_load_balancer_controller" {
   ]
 }
 
-# resource "helm_release" "aws_ebs_csi_driver" {
-#   name       = "aws-ebs-csi-driver"
-#   namespace  = "kube-system"
-#   repository = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
-#   chart      = "aws-ebs-csi-driver"
-#   version    = "2.48" 
-
-#   values = [
-#     yamlencode({
-#       controller:
-#         serviceAccount:
-#           create = true
-#           name   = "ebs-csi-controller-sa"
-#       node:
-#         serviceAccount:
-#           create = true
-#           name   = "ebs-csi-node-sa"
-#     })
-#   ]
-# }
-
 resource "helm_release" "calico" {
   name       = "calico"
   namespace  = kubernetes_namespace.calico-systems.metadata[0].name

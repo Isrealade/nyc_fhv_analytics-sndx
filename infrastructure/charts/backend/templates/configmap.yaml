@@ -5,6 +5,6 @@ metadata:
   labels:
     {{- include "backend.labels" . | nindent 4 }}
 data:
-    PGHOST: "postgres"
+    PGHOST: "postgres.default.svc.cluster.local"
     PGPORT: "5432"
     PGDATABASE: "fhv"
