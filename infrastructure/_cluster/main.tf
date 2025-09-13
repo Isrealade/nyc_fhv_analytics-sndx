@@ -1,6 +1,6 @@
 module "vpc" {
   source  = "Isrealade/vpc/aws"
-  version = "1.0.0"
+  version = "1.0.1"
 
   name = "css-vpc"
   cidr = "10.0.0.0/16"
@@ -41,8 +41,30 @@ module "eks" {
     node_pools = ["general-purpose"]
   }
 
+  upgrade_policy = {
+    support_type = "STANDARD"
+  }
+
   vpc_id     = module.vpc.vpc_id
   subnet_ids = concat(module.vpc.public_subnet_ids, module.vpc.private_subnet_ids)
+
+  addons = {
+
+    metrics-server = {
+      # addon_version = "latest"
+      preserve = false
+    },
+
+    kube-state-metrics = {
+      # addon_version = "latest" # or pin a specific version
+      preserve = false # keeps the addon if the cluster is deleted
+    },
+
+    prometheus-node-exporter = {
+      # addon_version = "latest"
+      preserve = false
+    }
+  }
 
   tags = {
     Environment = "production"
@@ -103,6 +125,7 @@ module "ecr" {
       ]
     }
   ]
+
 
   tags = {
     Terraform   = "true"

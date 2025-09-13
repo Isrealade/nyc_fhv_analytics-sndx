@@ -11,6 +11,20 @@ spec:
   - Egress
 
 ---
+## Network Policy to allow ingress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-controller
+  namespace: default
+spec:
+  podSelector: {}  # all pods in default namespace
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: aws-load-balancer-controller
+--- 
 ## Network Policy to allow dns
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

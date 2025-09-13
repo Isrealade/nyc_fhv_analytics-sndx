@@ -50,6 +50,52 @@
 #   client_id_list  = ["sts.amazonaws.com"]
 # }
 
+data "aws_eks_cluster" "cluster" {
+  name = module.eks.cluster_name
+
+  depends_on = [module.eks]
+}
+
+data "aws_eks_cluster_auth" "cluster" {
+  name = module.eks.cluster_name
+}
+
+# resource "aws_iam_openid_connect_provider" "oidc" {
+#   client_id_list  = ["sts.amazonaws.com"]
+#   url             = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
+
+#   depends_on = [module.eks]
+# }
+
+
+resource "aws_iam_policy" "alb_controller" {
+  name        = "eks-alb-controller-policy"
+  description = "IAM policy for AWS Load Balancer Controller"
+  policy      = file("${path.module}/alb-controller-policy.json")
+}
+
+resource "aws_iam_role" "alb_controller" {
+  name = "eks-alb-controller"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "alb_controller_attach" {
+  policy_arn = aws_iam_policy.alb_controller.arn
+  role       = aws_iam_role.alb_controller.name
+}
+
 resource "aws_iam_policy" "argocd_image_updater_ecr" {
   name        = "ArgoCDImageUpdaterECRPolicy"
   description = "Policy for ArgoCD Image Updater to access ECR"
@@ -57,8 +103,8 @@ resource "aws_iam_policy" "argocd_image_updater_ecr" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "ecr:GetAuthorizationToken",
           "ecr:DescribeImages",
           "ecr:BatchGetImage",
@@ -71,12 +117,11 @@ resource "aws_iam_policy" "argocd_image_updater_ecr" {
 }
 
 data "aws_iam_openid_connect_provider" "eks" {
-#   url = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
   url = module.eks.cluster_oidc_issuer_url
 }
 
 resource "aws_iam_role" "argocd_image_updater" {
-  name = "ArgoCDImageUpdaterRole"
+  name = "argocd-image-updater"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
