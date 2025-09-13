@@ -4,11 +4,6 @@ metadata:
   name: auto-ebs-sc
   annotations:
     storageclass.kubernetes.io/is-default-class: "true"
-allowedTopologies:
-- matchLabelExpressions:
-  - key: eks.amazonaws.com/compute-type
-    values:
-    - auto
 provisioner: ebs.csi.eks.amazonaws.com
 volumeBindingMode: WaitForFirstConsumer
 parameters:
