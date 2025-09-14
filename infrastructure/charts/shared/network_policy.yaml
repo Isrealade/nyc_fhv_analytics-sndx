@@ -19,11 +19,23 @@ metadata:
   namespace: default
 spec:
   podSelector: {}  # all pods in default namespace
+  policyTypes:
+    - Ingress
   ingress:
     - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: aws-load-balancer-controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
 --- 
 ## Network Policy to allow dns
 apiVersion: networking.k8s.io/v1

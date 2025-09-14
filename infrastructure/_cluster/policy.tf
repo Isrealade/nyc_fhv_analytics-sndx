@@ -156,6 +156,10 @@ resource "aws_iam_policy" "alb_controller" {
   )
 }
 
+### I stopped here whereby I am checking the policies to remove things not needed and ensure there are no repetitions in the code 
+### current though process includes checking the OIDE as it appears somethings are being imported even when not needed 
+## check the eks OIDC and every policy here
+
 resource "aws_iam_role" "alb_controller" {
   name = "eks-alb-controller"
 

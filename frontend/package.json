@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test": "echo 'No test configured'",
+    "lint": "echo 'No linter configured'",
     "preview": "vite preview --port 5173"
   },
   "dependencies": {

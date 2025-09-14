@@ -1,0 +1,40 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: NYC_FHV-ingress
+  namespace: default 
+  annotations:
+    kubernetes.io/ingress.class: alb
+    #ACM certificate for HTTPS
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:501818865030:certificate/96c6447f-658b-445e-badb-114bb9496436
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+spec:
+  rules:
+    - host: css.redeploy.online
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 8080
+          - path: /drivers
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 4000
+          - path: /stats
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 4000
+  tls: []

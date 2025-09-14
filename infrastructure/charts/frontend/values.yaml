@@ -55,53 +55,7 @@ service:
   type: ClusterIP
   port: 8080
 
-# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
-ingress:
-  enabled: true
-  className: "alb"
-  annotations: 
-        # Tell Kubernetes to use the AWS ALB Ingress Controller
-    kubernetes.io/ingress.class: alb
-
-    # Attach your ACM certificate
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:501818865030:certificate/96c6447f-658b-445e-badb-114bb9496436
-
-    # Make the ALB internet-facing
-    alb.ingress.kubernetes.io/scheme: internet-facing
-
-    # Redirect HTTP traffic to HTTPS automatically
-    alb.ingress.kubernetes.io/ssl-redirect: '443'
-    alb.ingress.kubernetes.io/target-type: ip
-
-    # Make ALB listen only on HTTPS 443
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-  hosts:
-    - host: css.redeploy.online
-      paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: frontend
-              port:
-                number: 8080
-        - path: /drivers 
-          pathType: Prefix
-          backend:
-            service:
-              name: backend
-              port:
-                number: 4000
-        - path: /stats
-          pathType: Prefix
-          backend:
-            service:
-              name: backend
-              port:
-                number: 4000
-  tls: []
-
-
+# This block is for setting up the resource request and limit
 resources:
   limits:
     cpu: 100m
@@ -123,8 +77,8 @@ resources:
 # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
 autoscaling:
   enabled: true
-  minReplicas: 3
-  maxReplicas: 5
+  minReplicas: 2
+  maxReplicas: 4
   targetCPUUtilizationPercentage: 80
   targetMemoryUtilizationPercentage: 80
 

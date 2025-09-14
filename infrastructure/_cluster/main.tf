@@ -1,9 +1,8 @@
 module "vpc" {
   source  = "Isrealade/vpc/aws"
   version = "1.1.0"
-
-  name = "css-vpc"
-  cidr = "10.0.0.0/16"
+  name    = "css-vpc"
+  cidr    = "10.0.0.0/16"
 
   public_subnet  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
   private_subnet = ["10.0.10.0/24", "10.0.11.0/24", "10.0.12.0/24"]
@@ -37,14 +36,13 @@ module "eks" {
   version    = "~> 21.0"
   depends_on = [module.vpc]
 
-  name               = "css-cluster"
-  kubernetes_version = "1.33"
-
-  # Optional
-  endpoint_public_access = true
-
-  # Optional: Adds the current caller identity as an administrator via cluster access entry
+  name                                     = "css-cluster"
+  kubernetes_version                       = "1.33"
+  endpoint_public_access                   = true
   enable_cluster_creator_admin_permissions = true
+  create_cloudwatch_log_group              = false
+  vpc_id                                   = module.vpc.vpc_id
+  subnet_ids                               = concat(module.vpc.public_subnet_ids, module.vpc.private_subnet_ids)
 
   compute_config = {
     enabled    = true
@@ -54,11 +52,6 @@ module "eks" {
   upgrade_policy = {
     support_type = "STANDARD"
   }
-
-  create_cloudwatch_log_group = false
-
-  vpc_id     = module.vpc.vpc_id
-  subnet_ids = concat(module.vpc.public_subnet_ids, module.vpc.private_subnet_ids)
 
   addons = {
 
@@ -76,8 +69,8 @@ module "eks" {
     },
 
     kube-state-metrics = {
-      # addon_version = "latest" # or pin a specific version
-      preserve = false # keeps the addon if the cluster is deleted
+      # addon_version = "latest"
+      preserve = false
     },
 
     prometheus-node-exporter = {
@@ -93,15 +86,15 @@ module "eks" {
 }
 
 module "ecr" {
-  source  = "terraform-aws-modules/ecr/aws"
-  version = "3.0.1"
-
+  source   = "terraform-aws-modules/ecr/aws"
+  version  = "3.0.1"
   for_each = toset(var.repositories)
 
-  repository_name         = each.value
-  repository_force_delete = true
+  repository_name               = each.value
+  repository_type               = "private"
+  repository_force_delete       = true
+  repository_image_scan_on_push = true
 
-  repository_read_write_access_arns = [module.eks.cluster_iam_role_arn]
   repository_lifecycle_policy = jsonencode({
     rules = [
       {
@@ -120,31 +113,8 @@ module "ecr" {
     ]
   })
 
-  # Registry Scanning Configuration
   manage_registry_scanning_configuration = true
   registry_scan_type                     = "ENHANCED"
-  registry_scan_rules = [
-    {
-      scan_frequency = "SCAN_ON_PUSH"
-      filter = [
-        {
-          filter      = "example1"
-          filter_type = "WILDCARD"
-        },
-        { filter      = "example2"
-          filter_type = "WILDCARD"
-        }
-      ]
-      }, {
-      scan_frequency = "CONTINUOUS_SCAN"
-      filter = [
-        {
-          filter      = "example"
-          filter_type = "WILDCARD"
-        }
-      ]
-    }
-  ]
 
 
   tags = {
