@@ -41,7 +41,7 @@ resource "helm_release" "aws_load_balancer_controller" {
       vpcId       = data.aws_eks_cluster.eks.vpc_config[0].vpc_id  ### change this vpc data source to the vpc source 
       serviceAccount = {
         create = false
-        name   = kubernetes_service_account.alb_controller.name
+        name   = kubernetes_service_account.alb_controller.metadata[0].name
       }
     })
   ]

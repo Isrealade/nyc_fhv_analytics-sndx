@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: NYC_FHV-ingress
+  name: nyc-fhv-ingress
   namespace: default 
   annotations:
     kubernetes.io/ingress.class: alb
