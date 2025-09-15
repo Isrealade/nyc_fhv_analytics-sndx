@@ -209,7 +209,7 @@ resource "aws_iam_role" "argocd_image_updater" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = module.eks.cluster_oidc_issuer_url
+          Federated = module.eks.oidc_provider_arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
