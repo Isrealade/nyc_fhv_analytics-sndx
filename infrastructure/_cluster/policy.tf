@@ -1,8 +1,11 @@
+data "aws_caller_identity" "current" {
+}
+
 # resource "aws_iam_policy" "policy" {
 #   name        = "secret-manager"
 #   path        = "/"
-#   description = "My test policy"
-#   policy = jsondecode(
+#   description = "Policy for cluster secrets"
+#   policy = jsonencode(
 #     {
 #       "Version" : "2012-10-17",
 #       "Statement" : [
@@ -21,9 +24,9 @@
 #             "secretsmanager:DescribeSecret"
 #           ],
 #           "Resource" : [
-#             "arn:aws:secretsmanager:us-east-1:123456789012:secret:secretName1-AbCdEf",
-#             "arn:aws:secretsmanager:us-east-1:123456789012:secret:secretName2-AbCdEf",
-#             "arn:aws:secretsmanager:us-east-1:123456789012:secret:secretName3-AbCdEf"
+#             "arn:aws:secretsmanager:us-east-1:${data.aws_caller_identity.current.id}:secret:db_username",
+#             "arn:aws:secretsmanager:us-east-1:${data.aws_caller_identity.current.id}:secret:db_password"
+#             # "arn:aws:secretsmanager:us-east-1:${data.aws_caller_identity.current.id}:secret:secretName3-AbCdEf"
 #           ]
 #         }
 #       ]
@@ -31,40 +34,30 @@
 #   )
 # }
 
-# data "aws_eks_cluster" "eks" {
-#   name = "css-cluster"
-# }
 
-# data "aws_eks_cluster_auth" "eks" {
-#   name = "css-cluster"
-# }
-
-# locals {
-#   # OIDC provider host string used in trust condition (no https://)
-#   oidc_sub_prefix = replace(data.aws_eks_cluster.eks.identity[0].oidc[0].issuer, "https://", "")
-# }
-
-# # Create the OIDC provider (skip if already created via eksctl)
-# resource "aws_iam_openid_connect_provider" "eks" {
-#   url             = data.aws_eks_cluster.eks.identity[0].oidc[0].issuer
-#   client_id_list  = ["sts.amazonaws.com"]
-# }
-
-data "aws_eks_cluster" "cluster" {
-  name = module.eks.cluster_name
-
-  depends_on = [module.eks]
-}
-
-data "aws_eks_cluster_auth" "cluster" {
-  name = module.eks.cluster_name
-}
-
-# resource "aws_iam_openid_connect_provider" "oidc" {
-#   client_id_list  = ["sts.amazonaws.com"]
-#   url             = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
-
-#   depends_on = [module.eks]
+# resource "aws_iam_role" "secret-manager" {
+#   name        = "secret-manager-role"
+#   description = "The secret manager role for the cluster"
+#   assume_role_policy = jsonencode(
+#     {
+#       Version = "2012-10-17"
+#       Statement = [
+#         {
+#           Effect = "Allow"
+#           Principal = {
+#             Federated = module.eks.oidc_provider_arn
+#           }
+#           Action = "sts:AssumeRoleWithWebIdentity"
+#           Condition = {
+#             StringEquals = {
+#               "${module.eks.cluster_oidc_issuer_url}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
+#               "${module.eks.cluster_oidc_issuer_url}:aud" = "sts.amazonaws.com"
+#             }
+#           }
+#         }
+#       ]
+#     }
+#   )
 # }
 
 
@@ -156,10 +149,6 @@ resource "aws_iam_policy" "alb_controller" {
   )
 }
 
-### I stopped here whereby I am checking the policies to remove things not needed and ensure there are no repetitions in the code 
-### current though process includes checking the OIDE as it appears somethings are being imported even when not needed 
-## check the eks OIDC and every policy here
-
 resource "aws_iam_role" "alb_controller" {
   name = "eks-alb-controller"
 
@@ -169,18 +158,20 @@ resource "aws_iam_role" "alb_controller" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = data.aws_iam_openid_connect_provider.eks.arn
+          Federated = module.eks.oidc_provider_arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "${replace(data.aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
-            "${replace(data.aws_iam_openid_connect_provider.eks.url, "https://", "")}:aud" = "sts.amazonaws.com"
+            "${module.eks.cluster_oidc_issuer_url}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
+            "${module.eks.cluster_oidc_issuer_url}:aud" = "sts.amazonaws.com"
           }
         }
       }
     ]
   })
+
+  depends_on = [module.eks]
 }
 
 resource "aws_iam_role_policy_attachment" "alb_controller_attach" {
@@ -189,7 +180,7 @@ resource "aws_iam_role_policy_attachment" "alb_controller_attach" {
 }
 
 resource "aws_iam_policy" "argocd_image_updater_ecr" {
-  name        = "ArgoCDImageUpdaterECRPolicy"
+  name        = "argocd-image-updater-policy"
   description = "Policy for ArgoCD Image Updater to access ECR"
   policy = jsonencode({
     Version = "2012-10-17"
@@ -208,14 +199,9 @@ resource "aws_iam_policy" "argocd_image_updater_ecr" {
   })
 }
 
-data "aws_iam_openid_connect_provider" "eks" {
-  url = module.eks.cluster_oidc_issuer_url
-
-  depends_on = [module.eks]
-}
-
 resource "aws_iam_role" "argocd_image_updater" {
-  name = "argocd-image-updater"
+  name        = "argocd-image-updater"
+  description = "ArgoCD image updater role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -223,13 +209,13 @@ resource "aws_iam_role" "argocd_image_updater" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = data.aws_iam_openid_connect_provider.eks.arn
+          Federated = module.eks.oidc_provider_arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "${replace(data.aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub" = "system:serviceaccount:argocd:argocd-image-updater",
-            "${replace(data.aws_iam_openid_connect_provider.eks.url, "https://", "")}:aud" : "sts.amazonaws.com"
+            "${module.eks.cluster_oidc_issuer_url}:sub" = "system:serviceaccount:argocd:argocd-image-updater",
+            "${module.eks.cluster_oidc_issuer_url}:aud" : "sts.amazonaws.com"
           }
         }
       }
@@ -237,7 +223,6 @@ resource "aws_iam_role" "argocd_image_updater" {
   })
 }
 
-# Attach the ECR policy
 resource "aws_iam_role_policy_attachment" "argocd_image_updater_attach" {
   role       = aws_iam_role.argocd_image_updater.name
   policy_arn = aws_iam_policy.argocd_image_updater_ecr.arn
