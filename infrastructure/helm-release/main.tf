@@ -38,10 +38,10 @@ resource "helm_release" "aws_load_balancer_controller" {
   values = [
     yamlencode({
       clusterName = data.aws_eks_cluster.eks.name
-      vpcId       = data.aws_eks_cluster.eks.vpc_config[0].vpc_id
+      vpcId       = data.aws_eks_cluster.eks.vpc_config[0].vpc_id  ### change this vpc data source to the vpc source 
       serviceAccount = {
         create = false
-        name   = data.kubernetes_service_account.alb_controller.metadata[0].name
+        name   = kubernetes_service_account.alb_controller.name
       }
     })
   ]
