@@ -4,7 +4,7 @@ metadata:
   name: frontend
   namespace: argocd
   annotations:
-    rgocd-image-updater.argoproj.io/image-list: "frontend=501818865030.dkr.ecr.us-east-1.amazonaws.com/frontend"
+    argocd-image-updater.argoproj.io/image-list: "frontend=501818865030.dkr.ecr.us-east-1.amazonaws.com/frontend"
     argocd-image-updater.argoproj.io/write-back-method: git
     argocd-image-updater.argoproj.io/frontend.update-strategy: digest
     # argocd-image-updater.argoproj.io/frontend.force-update: "true" 
