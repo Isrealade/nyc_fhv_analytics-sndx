@@ -1,68 +1,75 @@
 data "aws_caller_identity" "current" {
 }
 
-# resource "aws_iam_policy" "policy" {
-#   name        = "secret-manager"
-#   path        = "/"
-#   description = "Policy for cluster secrets"
-#   policy = jsonencode(
-#     {
-#       "Version" : "2012-10-17",
-#       "Statement" : [
-#         {
-#           "Effect" : "Allow",
-#           "Action" : [
-#             "secretsmanager:BatchGetSecretValue",
-#             "secretsmanager:ListSecrets"
-#           ],
-#           "Resource" : "*"
-#         },
-#         {
-#           "Effect" : "Allow",
-#           "Action" : [
-#             "secretsmanager:GetSecretValue",
-#             "secretsmanager:DescribeSecret"
-#           ],
-#           "Resource" : [
-#             "arn:aws:secretsmanager:us-east-1:${data.aws_caller_identity.current.id}:secret:db_username",
-#             "arn:aws:secretsmanager:us-east-1:${data.aws_caller_identity.current.id}:secret:db_password"
-#             # "arn:aws:secretsmanager:us-east-1:${data.aws_caller_identity.current.id}:secret:secretName3-AbCdEf"
-#           ]
-#         }
-#       ]
-#     }
-#   )
-# }
-
-
-# resource "aws_iam_role" "secret-manager" {
-#   name        = "secret-manager-role"
-#   description = "The secret manager role for the cluster"
-#   assume_role_policy = jsonencode(
-#     {
-#       Version = "2012-10-17"
-#       Statement = [
-#         {
-#           Effect = "Allow"
-#           Principal = {
-#             Federated = module.eks.oidc_provider_arn
-#           }
-#           Action = "sts:AssumeRoleWithWebIdentity"
-#           Condition = {
-#             StringEquals = {
-#               "${module.eks.cluster_oidc_issuer_url}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
-#               "${module.eks.cluster_oidc_issuer_url}:aud" = "sts.amazonaws.com"
-#             }
-#           }
-#         }
-#       ]
-#     }
-#   )
-# }
-
 locals {
   oidc_url = replace(module.eks.cluster_oidc_issuer_url, "https://", "")
 }
+
+
+resource "aws_iam_policy" "secret_manager_policy" {
+  name        = "secret-manager"
+  path        = "/"
+  description = "Policy for cluster secrets"
+  policy = jsonencode(
+    {
+      "Version" : "2012-10-17",
+      "Statement" : [
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "secretsmanager:BatchGetSecretValue",
+            "secretsmanager:ListSecrets"
+          ],
+          "Resource" : "*"
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "secretsmanager:GetSecretValue",
+            "secretsmanager:DescribeSecret"
+          ],
+          "Resource" : [
+            "arn:aws:secretsmanager:us-east-1:${data.aws_caller_identity.current.id}:secret:db_username",
+            "arn:aws:secretsmanager:us-east-1:${data.aws_caller_identity.current.id}:secret:db_password"
+            # "arn:aws:secretsmanager:us-east-1:${data.aws_caller_identity.current.id}:secret:secretName3-AbCdEf"
+          ]
+        }
+      ]
+    }
+  )
+}
+
+
+resource "aws_iam_role" "secret-manager" {
+  name        = "secret-manager"
+  description = "The secret manager role for the cluster"
+  assume_role_policy = jsonencode(
+    {
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Effect = "Allow"
+          Principal = {
+            Federated = module.eks.oidc_provider_arn
+          }
+          Action = "sts:AssumeRoleWithWebIdentity"
+          Condition = {
+            StringEquals = {
+              "${module.eks.cluster_oidc_issuer_url}:sub" = "system:serviceaccount:default:secret-manager"
+              "${module.eks.cluster_oidc_issuer_url}:aud" = "sts.amazonaws.com"
+            }
+          }
+        }
+      ]
+    }
+  )
+}
+
+resource "aws_iam_role_policy_attachment" "secret_manager_attach" {
+  role       = aws_iam_role.secret-manager.name
+  policy_arn = aws_iam_policy.secret_manager_policy.arn
+}
+
 
 resource "aws_iam_policy" "alb_controller" {
   name        = "eks-alb-controller-policy"

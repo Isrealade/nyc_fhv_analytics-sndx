@@ -125,6 +125,13 @@ module "ecr" {
   }
 }
 
+resource "aws_secretsmanager_secret" "pg" {
+  name        = "pg-db-secret"
+  description = "PostgreSQL credentials for backend"
+
+  depends_on = [ module.eks ]
+}
+
 resource "aws_acm_certificate" "cert" {
   domain_name       = "css.redeploy.online"
   validation_method = "DNS"

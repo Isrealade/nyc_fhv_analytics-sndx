@@ -1,121 +1,260 @@
 # NYCAD Analytics Dashboard
 
-- Data source: posgres SQL
-- Backend: Node.js + Express + Postgres, daily sync job
-- Frontend: React + Tailwind CSS
-- Orchestration: docker-compose
+**NYCAD Analytics Dashboard** is a full-stack analytics platform for NYC taxi data, built with modern DevOps practices. The platform features containerized frontend and backend services, CI/CD pipelines to AWS ECR, GitOps deployment via ArgoCD on EKS, secure secrets management using AWS Secrets Manager, and monitoring with Prometheus & Grafana.
+
+---
+
+## Tech Stack
+
+* **Frontend:** React + Tailwind CSS
+* **Backend:** Node.js + Express + PostgreSQL
+* **Infrastructure:** AWS EKS, RDS, S3, VPC
+* **CI/CD:** GitHub Actions, Docker, Trivy, SonarQube, TruffleHog
+* **GitOps:** ArgoCD, ArgoCD Image Updater
+* **Monitoring:** kube-prometheus-stack, Grafana
+
+---
+
+## Architecture Overview
+
+```
++-------------+        +------------------+       +------------------+
+| Frontend    | ---->  | Ingress (EKS)    | --->  | Backend (EKS)    |
+| React App   |        | nyc-fhv-ingress  |       | Node.js/Express  |
++-------------+        +------------------+       +------------------+
+                                                         |
+                                                         v
+                                                 +----------------+
+                                                 | RDS Postgres   |
+                                                 | pg-db-secret   |
+                                                 +----------------+
+
+ ArgoCD Image Updater automatically updates images from AWS ECR
+ Monitoring via Prometheus & Grafana
+```
+
+---
 
 ## Project Structure
 
-
 ```
+NYCAD-Analytics-Dashboard/
+├── .gitignore
+├── README.md
+├── docker-compose.yml
+├── sonar-project.properties
+
 ├── .github/
 │   └── workflows/
-│       ├── ci-backend.yaml
-│       └── ci-frontend.yaml
-├── backend/
-│   ├── __tests__/
-│   │   └── utils.test.js
-│   ├── src/
-│   │   ├── setup/
-│   │   │   ├── routes/
-│   │   │   │   ├── drivers.js
-│   │   │   │   └── stats.js
-│   │   │   ├── services/
-│   │   │   │   ├── fetchAndStore.js
-│   │   │   │   └── populateTrends.js
-│   │   │   ├── utils/
-│   │   │   │   └── validation.js
-│   │   │   ├── db.js
-│   │   │   └── init.sql
-│   │   └── server.js
+│       ├── ci-backend.yaml            # CI/CD pipeline for backend
+│       └── ci-frontend.yaml           # CI/CD pipeline for frontend
+
+├── backend/                           # Backend service (Node.js/Express)
 │   ├── .dockerignore
 │   ├── .env.example
 │   ├── Dockerfile
 │   ├── jest.config.js
-│   ├── package-lock.json
-│   └── package.json
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── BoroughChart.jsx
-│   │   │   └── TrendChart.jsx
-│   │   ├── lib/
-│   │   │   └── api.js
-│   │   ├── pages/
-│   │   │   ├── Dashboard.jsx
-│   │   │   └── Search.jsx
-│   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   └── styles.css
+│   ├── package.json
+│   ├── __tests__/utils.test.js
+│   └── src/
+│       ├── server.js
+│       └── setup/
+│           ├── routes/
+│           │   ├── drivers.js
+│           │   └── stats.js
+│           ├── services/
+│           │   ├── fetchAndStore.js
+│           │   └── populateTrends.js
+│           ├── utils/validation.js
+│           ├── db.js
+│           └── init.sql
+
+├── frontend/                          # Frontend service (React)
 │   ├── .dockerignore
-│   ├── .env.example 
+│   ├── .env.example
 │   ├── Dockerfile
 │   ├── index.html
-│   ├── package-lock.json
 │   ├── package.json
 │   ├── postcss.config.js
 │   ├── tailwind.config.js
-│   └── vite.config.js
-├── .gitignore
-├── README.md
-├── docker-compose.yml
-├── package-lock.json
-└── sonar-project.properties
+│   ├── vite.config.js
+│   └── src/
+│       ├── App.jsx
+│       ├── main.jsx
+│       ├── styles.css
+│       ├── lib/api.js
+│       ├── components/
+│       │   ├── BoroughChart.jsx
+│       │   └── TrendChart.jsx
+│       └── pages/
+│           ├── Dashboard.jsx
+│           └── Search.jsx
+
+├── infrastructure/                     # Cluster provisioning & Helm charts
+│   ├── _cluster/                        # Terraform scripts for AWS resources
+│   │   ├── provider.tf
+│   │   └── variables.tf
+│   ├── charts/                           # Helm charts for apps & monitoring
+│   │   ├── argocd/
+│   │   ├── backend/
+│   │   ├── frontend/
+│   │   ├── kube-prometheus-stack/
+│   │   └── argocd-image-updater/
+│   └── helm-release/                     # Scripts to deploy Helm charts
 ```
-## Continuous Integration
 
-This project uses GitHub Actions for CI on both frontend and backend:
+---
 
-- **Frontend CI** ([.github/workflows/ci-frontend.yaml](.github/workflows/ci-frontend.yaml)):  
-  Runs on pushes and pull requests to `main` affecting the `frontend/` directory.  
-  Steps include dependency installation, secret scanning, SonarQube analysis, and build verification.
+## Local Development
 
-- **Backend CI** ([.github/workflows/ci-backend.yaml](.github/workflows/ci-backend.yaml)):  
-  Runs on pushes and pull requests to `main` affecting the `backend/` directory.  
-  Steps include dependency installation, linting, testing, secret scanning, and SonarQube analysis.
-
-
-## Backend Setup (Local)
-
-1. Create `backend/.env` from `.env.example` and adjust if needed.
-2. Ensure Postgres is running and accessible with the provided credentials.
-3. Install deps and start:
+### Backend
 
 ```bash
 cd backend
+cp .env.example .env
 npm install
-npm run seed # optional: one-time sync
-npm run dev  # starts on http://localhost:4000
+npm run seed   # optional: one-time data sync
+npm run dev    # http://localhost:4000
 ```
 
-### API Endpoints
-
-- `GET /drivers?borough=Queens&search=smith&page=1&limit=25` — list drivers
-- `GET /drivers/:license` — single driver by license
-- `GET /stats` — totals and borough breakdown
-
-## Frontend Setup (Local)
+### Frontend
 
 ```bash
 cd frontend
+cp .env.example .env
 npm install
-# Set VITE_API_BASE_URL in .env if backend not on http://localhost:4000
-npm run dev  # http://localhost:5173
+npm run dev    # http://localhost:5173
 ```
 
-## Run with docker-compose
+### Full Stack with Docker Compose
 
 ```bash
 docker-compose up --build
 ```
 
-- Frontend: http://localhost:5173
-- Backend: http://localhost:4000
-- Postgres: localhost:5432 (user `postgres`, password `postgres`, db `fhv`)
+* Frontend: [http://localhost:5173](http://localhost:5173)
+* Backend: [http://localhost:4000](http://localhost:4000)
+* Postgres: localhost:5432
 
-## Notes
+---
 
-- The backend schedules a daily sync (default 3 AM UTC) using `CRON_SCHEDULE` env var.
-- You can force a one-time sync by running `npm run seed` in `backend/`.
-- Secrets/DB credentials should be managed via environment variables.
+## Continuous Integration / Deployment
+
+### Frontend CI (`.github/workflows/ci-frontend.yaml`)
+
+* Triggered on push or PR affecting `frontend/`.
+* Steps:
+
+  1. Install dependencies and cache `node_modules`.
+  2. Lint & test.
+  3. Secret scanning via TruffleHog.
+  4. SonarQube analysis.
+  5. Build Docker image and scan with Trivy.
+  6. Push image to **AWS ECR**.
+
+### Backend CI (`.github/workflows/ci-backend.yaml`)
+
+* Triggered on push or PR affecting `backend/`.
+* Steps:
+
+  1. Install dependencies and cache `node_modules`.
+  2. Lint & test with Postgres service.
+  3. Secret scanning via TruffleHog.
+  4. SonarQube analysis.
+  5. Build Docker image and scan with Trivy.
+  6. Push image to **AWS ECR**.
+
+---
+
+## AWS Setup
+
+### Secrets Manager
+
+* Create a secret for the database:
+
+```
+Secret Name: pg-db-secret
+Keys:
+  - dbusername
+  - dbpassword
+```
+
+* Backend service retrieves credentials from this secret.
+
+### Terraform Infrastructure
+
+* Provision resources using `_cluster/` Terraform:
+
+  * EKS cluster
+  * RDS Postgres
+  * S3 bucket (for remote state)
+  * Private VPC using custom module
+* After provisioning, Helm charts deploy services to the cluster.
+
+---
+
+## ArgoCD Setup & Deployment
+
+1. Install ArgoCD on the EKS cluster.
+2. Fetch ArgoCD admin password:
+
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
+
+3. Port-forward ArgoCD server:
+
+```bash
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+```
+
+4. Login using admin credentials.
+5. Connect your Git repository in ArgoCD.
+6. Deploy apps from `infrastructure/charts/rootapps`:
+
+```bash
+cd infrastructure/charts/rootapps
+kubectl apply -f infrastructure-app.yaml
+```
+
+* App of Apps pattern: all services will be deployed and monitored automatically.
+* Services: `frontend`, `backend`
+* Ingress: `nyc-fhv-ingress`
+
+**ArgoCD Image Updater** automatically updates Docker images from ECR to running deployments.
+
+---
+
+## Monitoring
+
+* **Prometheus** and **Grafana** deployed via `kube-prometheus-stack`.
+* Metrics are collected for cluster and services.
+* Dashboards are accessible through Grafana (port-forward or ingress).
+
+---
+
+## Destroying the Cluster & Services
+
+1. Disconnect repository from ArgoCD.
+2. Delete the `argocd` namespace:
+
+```bash
+kubectl delete ns argocd
+```
+
+3. Delete all deployments in `default` namespace:
+
+```bash
+kubectl delete deploy frontend backend
+kubectl delete svc frontend backend
+```
+
+4. Delete the ingress:
+
+```bash
+kubectl delete ingress nyc-fhv-ingress
+```
+
+5. Optionally, destroy Terraform infrastructure to remove EKS, RDS, VPC, and S3 resources.
+
+---

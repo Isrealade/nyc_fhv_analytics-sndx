@@ -13,6 +13,10 @@ data "kubernetes_service_account" "alb_controller" {
   }
 }
 
+data "aws_iam_role" "secret-manager" {
+  name = "secret-manager"
+}
+
 data "aws_iam_role" "alb_controller" {
   name = "eks-alb-controller"
 }

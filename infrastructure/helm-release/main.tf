@@ -18,6 +18,17 @@ resource "kubernetes_namespace" "calico-systems" {
 }
 
 
+resource "kubernetes_service_account" "secret-manager" {
+  metadata {
+    name      = "secret-manager"
+    namespace = "default"
+    annotations = {
+      "eks.amazonaws.com/role-arn" = data.aws_iam_role.secret-manager.arn
+    }
+  }
+}
+
+
 resource "kubernetes_service_account" "alb_controller" {
   metadata {
     name      = "aws-load-balancer-controller"
@@ -51,6 +62,27 @@ resource "helm_release" "aws_load_balancer_controller" {
   depends_on = [
     kubernetes_service_account.alb_controller
   ]
+}
+
+resource "helm_release" "csi_driver" {
+  name       = "secrets-store-csi-driver"
+  repository = "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
+  chart      = "secrets-store-csi-driver"
+  version    = "1.4.0"
+  namespace  = "kube-system"
+
+  set = {
+    name  = "syncSecret.enabled"
+    value = "true"
+  }
+}
+
+resource "helm_release" "csi_aws_provider" {
+  name       = "secrets-store-csi-driver-provider-aws"
+  repository = "https://aws.github.io/secrets-store-csi-driver-provider-aws"
+  chart      = "secrets-store-csi-driver-provider-aws"
+  version    = "2.0.0 "
+  namespace  = "kube-system"
 }
 
 resource "helm_release" "calico" {
@@ -96,4 +128,3 @@ resource "helm_release" "argocd" {
 
 #   depends_on = [kubernetes_namespace.monitoring]
 # }
-

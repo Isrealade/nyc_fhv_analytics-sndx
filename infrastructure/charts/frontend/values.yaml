@@ -18,7 +18,7 @@ nameOverride: ""
 fullnameOverride: ""
 
 config:
-  backendUrl: http://backend.default.svc.cluster.local:4000
+  backendUrl: "https://css.redeploy.online"
 
 # This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
 serviceAccount:
