@@ -38,7 +38,9 @@ resource "helm_release" "aws_load_balancer_controller" {
   values = [
     yamlencode({
       clusterName = data.aws_eks_cluster.eks.name
-      vpcId       = data.aws_eks_cluster.eks.vpc_config[0].vpc_id  ### change this vpc data source to the vpc source 
+      vpcId       = data.aws_eks_cluster.eks.vpc_config[0].vpc_id  ### change this vpc data source to the vpc source
+      enableWaf   = false
+      enableWafv2 = false 
       serviceAccount = {
         create = false
         name   = kubernetes_service_account.alb_controller.metadata[0].name
@@ -85,13 +87,13 @@ resource "helm_release" "argocd" {
   depends_on = [kubernetes_namespace.argocd]
 }
 
-resource "helm_release" "kube_prometheus_stack" {
-  name       = "kube-prometheus"
-  namespace  = kubernetes_namespace.monitoring.metadata[0].name
-  repository = "https://prometheus-community.github.io/helm-charts"
-  chart      = "kube-prometheus-stack"
-  version    = "77.6.1"
+# resource "helm_release" "kube_prometheus_stack" {
+#   name       = "kube-prometheus"
+#   namespace  = kubernetes_namespace.monitoring.metadata[0].name
+#   repository = "https://prometheus-community.github.io/helm-charts"
+#   chart      = "kube-prometheus-stack"
+#   version    = "77.6.1"
 
-  depends_on = [kubernetes_namespace.monitoring]
-}
+#   depends_on = [kubernetes_namespace.monitoring]
+# }
 

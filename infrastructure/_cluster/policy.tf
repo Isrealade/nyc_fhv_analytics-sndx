@@ -60,6 +60,9 @@ data "aws_caller_identity" "current" {
 #   )
 # }
 
+locals {
+  oidc_url = replace(module.eks.cluster_oidc_issuer_url, "https://", "")
+}
 
 resource "aws_iam_policy" "alb_controller" {
   name        = "eks-alb-controller-policy"
@@ -163,8 +166,8 @@ resource "aws_iam_role" "alb_controller" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "${module.eks.cluster_oidc_issuer_url}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
-            "${module.eks.cluster_oidc_issuer_url}:aud" = "sts.amazonaws.com"
+            "${local.oidc_url}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
+            "${local.oidc_url}:aud" = "sts.amazonaws.com"
           }
         }
       }
@@ -191,7 +194,9 @@ resource "aws_iam_policy" "argocd_image_updater_ecr" {
           "ecr:GetAuthorizationToken",
           "ecr:DescribeImages",
           "ecr:BatchGetImage",
-          "ecr:GetDownloadUrlForLayer"
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:DescribeRepositories",
+          "ecr:ListImages"
         ]
         Resource = "*"
       }
@@ -214,8 +219,8 @@ resource "aws_iam_role" "argocd_image_updater" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "${module.eks.cluster_oidc_issuer_url}:sub" = "system:serviceaccount:argocd:argocd-image-updater",
-            "${module.eks.cluster_oidc_issuer_url}:aud" : "sts.amazonaws.com"
+            "${local.oidc_url}:sub" = "system:serviceaccount:argocd:argocd-image-updater"
+            # "${local.oidc_url}:aud" : "sts.amazonaws.com"
           }
         }
       }

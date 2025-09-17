@@ -181,7 +181,7 @@ config:
       prefix: 501818865030.dkr.ecr.us-east-1.amazonaws.com
       ping: yes
       insecure: no
-      credentials: ext:/scripts/auth1.sh
+      # credentials: ext:/scripts/auth1.sh
       credsexpire: 10h
     # - name: Azure Container Registry
     #   api_url: https://acr1.azurecr.io
@@ -211,13 +211,13 @@ authScripts:
   ## Expect the script to output Docker credentials in the form: <username>:<password>
   ## Authentication scripts can be used for various cloud providers like ECR or Azure Workload Identity.
   ## For Azure Workload Identity, you can place your authentication script here to handle token acquisition.
-  scripts:
-    auth1.sh: |
-      #!/bin/sh
-      REGION="us-east-1"
-      ACCOUNT_ID="501818865030"
-      PASSWORD=$(aws ecr get-login-password --region $REGION)
-      echo "AWS:$PASSWORD"
+  scripts: {}
+    # auth1.sh: |
+    #   #!/bin/sh
+    #   REGION="us-east-1"
+    #   ACCOUNT_ID="501818865030"
+    #   PASSWORD=$(aws ecr get-login-password --region $REGION)
+    #   echo "AWS:$PASSWORD"
     # auth2.sh: |
     #   #!/bin/sh
     #   echo "auth script 2 here"
