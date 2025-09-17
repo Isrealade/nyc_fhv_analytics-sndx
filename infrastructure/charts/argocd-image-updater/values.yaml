@@ -181,7 +181,7 @@ config:
       prefix: 501818865030.dkr.ecr.us-east-1.amazonaws.com
       ping: yes
       insecure: no
-      # credentials: ext:/scripts/auth1.sh
+      credentials: ecr
       credsexpire: 10h
     # - name: Azure Container Registry
     #   api_url: https://acr1.azurecr.io
