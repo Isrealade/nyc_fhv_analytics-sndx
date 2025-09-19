@@ -4,7 +4,7 @@
 replicaCount: 3
 
 image:
-  repository: 501818865030.dkr.ecr.us-east-1.amazonaws.com/backend-service
+  repository: 501818865030.dkr.ecr.eu-north-1.amazonaws.com/backend-service
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
