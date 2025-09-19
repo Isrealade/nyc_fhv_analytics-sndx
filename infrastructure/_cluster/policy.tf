@@ -1,159 +1,44 @@
-data "aws_caller_identity" "current" {
-}
-
-locals {
-  oidc_url_arn = replace(module.eks.cluster_oidc_issuer_url, "https://", "")
-}
-
-
+#########################
+# IAM Roles & Policies
+#########################
 resource "aws_iam_policy" "secret_manager_policy" {
   name        = "secret-manager"
   path        = "/"
   description = "Policy for cluster secrets"
+  policy      = file("${path.module}/policies/secret-manager.json")
+}
 
-  policy = jsonencode({
+resource "aws_iam_role" "secret_manager" {
+  name        = "secret-manager"
+  description = "The secret manager role for the cluster"
+  assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
-          "secretsmanager:BatchGetSecretValue",
-          "secretsmanager:ListSecrets"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect   = "Allow"
-        Action   = [
-          "secretsmanager:GetSecretValue",
-          "secretsmanager:DescribeSecret"
-        ]
-        Resource = [
-          "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.id}:secret:pg-db-secret*"
-        ]
+        Effect    = "Allow"
+        Principal = { Federated = module.eks.oidc_provider_arn }
+        Action    = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "${local.oidc_url_arn}:sub" = "system:serviceaccount:default:secret-manager"
+            "${local.oidc_url_arn}:aud" = "sts.amazonaws.com"
+          }
+        }
       }
     ]
   })
 }
 
-
-resource "aws_iam_role" "secret-manager" {
-  name        = "secret-manager"
-  description = "The secret manager role for the cluster"
-  assume_role_policy = jsonencode(
-    {
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Effect = "Allow"
-          Principal = {
-            Federated = module.eks.oidc_provider_arn
-          }
-          Action = "sts:AssumeRoleWithWebIdentity"
-          Condition = {
-            StringEquals = {
-              "${local.oidc_url_arn}:sub" = "system:serviceaccount:default:secret-manager"
-              "${local.oidc_url_arn}:aud" = "sts.amazonaws.com"
-            }
-          }
-        }
-      ]
-    }
-  )
-}
-
 resource "aws_iam_role_policy_attachment" "secret_manager_attach" {
-  role       = aws_iam_role.secret-manager.name
+  role       = aws_iam_role.secret_manager.name
   policy_arn = aws_iam_policy.secret_manager_policy.arn
 }
 
-
+# --- ALB Controller ---
 resource "aws_iam_policy" "alb_controller" {
   name        = "eks-alb-controller-policy"
   description = "IAM policy for AWS Load Balancer Controller"
-  policy = jsonencode(
-    {
-      "Version" : "2012-10-17",
-      "Statement" : [
-        {
-          "Effect" : "Allow",
-          "Action" : [
-            "iam:CreateServiceLinkedRole"
-          ],
-          "Resource" : "*",
-          "Condition" : {
-            "StringEquals" : {
-              "iam:AWSServiceName" : "elasticloadbalancing.amazonaws.com"
-            }
-          }
-        },
-        {
-          "Effect" : "Allow",
-          "Action" : [
-            "ec2:Describe*",
-            "elasticloadbalancing:Describe*"
-          ],
-          "Resource" : "*"
-        },
-        {
-          "Effect" : "Allow",
-          "Action" : [
-            "acm:ListCertificates",
-            "acm:DescribeCertificate"
-          ],
-          "Resource" : "*"
-        },
-        {
-          "Effect" : "Allow",
-          "Action" : [
-            "ec2:AuthorizeSecurityGroupIngress",
-            "ec2:RevokeSecurityGroupIngress",
-            "ec2:CreateSecurityGroup",
-            "ec2:CreateTags",
-            "ec2:DeleteTags",
-            "ec2:DeleteSecurityGroup"
-          ],
-          "Resource" : "*"
-        },
-        {
-          "Effect" : "Allow",
-          "Action" : [
-            "elasticloadbalancing:CreateLoadBalancer",
-            "elasticloadbalancing:CreateTargetGroup",
-            "elasticloadbalancing:DeleteLoadBalancer",
-            "elasticloadbalancing:DeleteTargetGroup",
-            "elasticloadbalancing:ModifyLoadBalancerAttributes",
-            "elasticloadbalancing:ModifyTargetGroup",
-            "elasticloadbalancing:ModifyTargetGroupAttributes",
-            "elasticloadbalancing:RegisterTargets",
-            "elasticloadbalancing:DeregisterTargets",
-            "elasticloadbalancing:CreateListener",
-            "elasticloadbalancing:DeleteListener",
-            "elasticloadbalancing:ModifyListener",
-            "elasticloadbalancing:CreateRule",
-            "elasticloadbalancing:DeleteRule",
-            "elasticloadbalancing:ModifyRule",
-            "elasticloadbalancing:AddTags",
-            "elasticloadbalancing:RemoveTags"
-          ],
-          "Resource" : "*"
-        },
-        {
-          "Effect" : "Allow",
-          "Action" : [
-            "wafv2:GetWebACL",
-            "wafv2:GetWebACLForResource",
-            "wafv2:AssociateWebACL",
-            "wafv2:DisassociateWebACL",
-            "wafv2:ListWebACLs",
-            "wafv2:ListResourcesForWebACL"
-          ],
-          "Resource" : "*"
-        }
-      ]
-    }
-
-  )
+  policy      = file("${path.module}/policies/alb-controller.json")
 }
 
 resource "aws_iam_role" "alb_controller" {
@@ -163,11 +48,9 @@ resource "aws_iam_role" "alb_controller" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Principal = {
-          Federated = module.eks.oidc_provider_arn
-        }
-        Action = "sts:AssumeRoleWithWebIdentity"
+        Effect    = "Allow"
+        Principal = { Federated = module.eks.oidc_provider_arn }
+        Action    = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
             "${local.oidc_url_arn}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
@@ -186,26 +69,11 @@ resource "aws_iam_role_policy_attachment" "alb_controller_attach" {
   role       = aws_iam_role.alb_controller.name
 }
 
+# --- ArgoCD Image Updater ---
 resource "aws_iam_policy" "argocd_image_updater_ecr" {
   name        = "argocd-image-updater-policy"
   description = "Policy for ArgoCD Image Updater to access ECR"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "ecr:GetAuthorizationToken",
-          "ecr:DescribeImages",
-          "ecr:BatchGetImage",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:DescribeRepositories",
-          "ecr:ListImages"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
+  policy      = file("${path.module}/policies/image-updater.json")
 }
 
 resource "aws_iam_role" "argocd_image_updater" {
@@ -216,15 +84,13 @@ resource "aws_iam_role" "argocd_image_updater" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Principal = {
-          Federated = module.eks.oidc_provider_arn
-        }
-        Action = "sts:AssumeRoleWithWebIdentity"
+        Effect    = "Allow"
+        Principal = { Federated = module.eks.oidc_provider_arn }
+        Action    = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
             "${local.oidc_url_arn}:sub" = "system:serviceaccount:argocd:argocd-image-updater"
-            "${local.oidc_url_arn}:aud" : "sts.amazonaws.com"
+            "${local.oidc_url_arn}:aud" = "sts.amazonaws.com"
           }
         }
       }

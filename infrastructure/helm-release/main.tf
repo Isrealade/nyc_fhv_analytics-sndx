@@ -51,7 +51,7 @@ resource "helm_release" "aws_load_balancer_controller" {
       clusterName = data.aws_eks_cluster.eks.name
       vpcId       = data.aws_eks_cluster.eks.vpc_config[0].vpc_id
       enableWaf   = false
-      enableWafv2 = false 
+      enableWafv2 = false
       serviceAccount = {
         create = false
         name   = kubernetes_service_account.alb_controller.metadata[0].name
@@ -74,7 +74,7 @@ resource "helm_release" "csi_driver" {
   set = [{
     name  = "syncSecret.enabled"
     value = "true"
-  }
+    }
   ]
 }
 
@@ -83,7 +83,7 @@ resource "helm_release" "csi_aws_provider" {
   repository = "https://aws.github.io/secrets-store-csi-driver-provider-aws"
   chart      = "secrets-store-csi-driver-provider-aws"
   # version    = "2.0.0 "
-  namespace  = "kube-system"
+  namespace = "kube-system"
 }
 
 resource "helm_release" "calico" {
@@ -119,13 +119,3 @@ resource "helm_release" "argocd" {
 
   depends_on = [kubernetes_namespace.argocd]
 }
-
-# resource "helm_release" "kube_prometheus_stack" {
-#   name       = "kube-prometheus"
-#   namespace  = kubernetes_namespace.monitoring.metadata[0].name
-#   repository = "https://prometheus-community.github.io/helm-charts"
-#   chart      = "kube-prometheus-stack"
-#   version    = "77.6.1"
-
-#   depends_on = [kubernetes_namespace.monitoring]
-# }
