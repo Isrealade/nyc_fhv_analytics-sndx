@@ -13,7 +13,7 @@ module "db" {
   create_db_option_group = false
   vpc_security_group_ids = [ module.vpc.security_group_id ]
 
-  iam_database_authentication_enabled = true
+  iam_database_authentication_enabled = false
   create_monitoring_role = false
 
   # DB subnet group
