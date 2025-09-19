@@ -1,260 +1,520 @@
-# NYCAD Analytics Dashboard
+# NYC FHV Analytics Dashboard - DevOps Internship Project
 
-**NYCAD Analytics Dashboard** is a full-stack analytics platform for NYC taxi data, built with modern DevOps practices. The platform features containerized frontend and backend services, CI/CD pipelines to AWS ECR, GitOps deployment via ArgoCD on EKS, secure secrets management using AWS Secrets Manager, and monitoring with Prometheus & Grafana.
+**NYC FHV Analytics Dashboard** is a comprehensive full-stack analytics platform for NYC For-Hire Vehicle (FHV) driver data, built with modern DevOps practices. This project demonstrates a complete CI/CD pipeline, infrastructure as code, GitOps deployment, and cloud-native architecture using AWS EKS, ArgoCD, and Terraform.
 
----
-
-## Tech Stack
-
-* **Frontend:** React + Tailwind CSS
-* **Backend:** Node.js + Express + PostgreSQL
-* **Infrastructure:** AWS EKS, RDS, S3, VPC
-* **CI/CD:** GitHub Actions, Docker, Trivy, SonarQube, TruffleHog
-* **GitOps:** ArgoCD, ArgoCD Image Updater
-* **Monitoring:** kube-prometheus-stack, Grafana
-
----
-
-## Architecture Overview
+## 🏗️ Architecture Overview
 
 ```
-+-------------+        +------------------+       +------------------+
-| Frontend    | ---->  | Ingress (EKS)    | --->  | Backend (EKS)    |
-| React App   |        | nyc-fhv-ingress  |       | Node.js/Express  |
-+-------------+        +------------------+       +------------------+
-                                                         |
-                                                         v
-                                                 +----------------+
-                                                 | RDS Postgres   |
-                                                 | pg-db-secret   |
-                                                 +----------------+
-
- ArgoCD Image Updater automatically updates images from AWS ECR
- Monitoring via Prometheus & Grafana
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Ingress        │    │   Backend       │
+│   React + Nginx │───▶│   ALB + TLS      │───▶│   Node.js API   │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                                         │
+                                                         ▼
+                                               ┌─────────────────┐
+                                               │   RDS Postgres  │
+                                               │   (AWS Managed) │
+                                               └─────────────────┘
 ```
 
----
+**Key Components:**
+- **Frontend**: React 18 + Vite + Tailwind CSS + Chart.js
+- **Backend**: Node.js + Express + PostgreSQL
+- **Infrastructure**: AWS EKS + RDS + VPC + ALB + ECR
+- **CI/CD**: GitHub Actions + Docker + Trivy + SonarQube
+- **GitOps**: ArgoCD + ArgoCD Image Updater
+- **Monitoring**: Prometheus + Grafana + AlertManager
+- **IaC**: Terraform + Helm
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-NYCAD-Analytics-Dashboard/
-├── .gitignore
-├── README.md
-├── docker-compose.yml
-├── sonar-project.properties
-
-├── .github/
-│   └── workflows/
-│       ├── ci-backend.yaml            # CI/CD pipeline for backend
-│       └── ci-frontend.yaml           # CI/CD pipeline for frontend
-
-├── backend/                           # Backend service (Node.js/Express)
-│   ├── .dockerignore
-│   ├── .env.example
-│   ├── Dockerfile
-│   ├── jest.config.js
+nyc_fhv_analytics-sndx/
+├── backend/                          # Backend service (Node.js/Express)
+│   ├── src/
+│   │   ├── server.js                 # Express server with cron jobs
+│   │   └── setup/
+│   │       ├── db.js                 # Database connection
+│   │       ├── init.sql              # Database schema
+│   │       ├── routes/               # API endpoints (/drivers, /stats)
+│   │       ├── services/             # Data fetching from NYC Open Data
+│   │       └── utils/                # Validation utilities
+│   ├── Dockerfile                    # Multi-stage container build
 │   ├── package.json
-│   ├── __tests__/utils.test.js
-│   └── src/
-│       ├── server.js
-│       └── setup/
-│           ├── routes/
-│           │   ├── drivers.js
-│           │   └── stats.js
-│           ├── services/
-│           │   ├── fetchAndStore.js
-│           │   └── populateTrends.js
-│           ├── utils/validation.js
-│           ├── db.js
-│           └── init.sql
-
-├── frontend/                          # Frontend service (React)
-│   ├── .dockerignore
-│   ├── .env.example
-│   ├── Dockerfile
-│   ├── index.html
-│   ├── package.json
-│   ├── postcss.config.js
-│   ├── tailwind.config.js
-│   ├── vite.config.js
-│   └── src/
-│       ├── App.jsx
-│       ├── main.jsx
-│       ├── styles.css
-│       ├── lib/api.js
-│       ├── components/
-│       │   ├── BoroughChart.jsx
-│       │   └── TrendChart.jsx
-│       └── pages/
-│           ├── Dashboard.jsx
-│           └── Search.jsx
-
-├── infrastructure/                     # Cluster provisioning & Helm charts
-│   ├── _cluster/                        # Terraform scripts for AWS resources
-│   │   ├── provider.tf
-│   │   └── variables.tf
-│   ├── charts/                           # Helm charts for apps & monitoring
-│   │   ├── argocd/
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── kube-prometheus-stack/
-│   │   └── argocd-image-updater/
-│   └── helm-release/                     # Scripts to deploy Helm charts
+│   └── __tests__/                    # Unit tests
+├── frontend/                         # Frontend service (React)
+│   ├── src/
+│   │   ├── components/               # React components (Charts, etc.)
+│   │   ├── pages/                    # Dashboard & Search pages
+│   │   └── lib/                      # API client
+│   ├── Dockerfile                    # Multi-stage build with Nginx
+│   └── package.json
+├── infrastructure/                   # Infrastructure as Code
+│   ├── _cluster/                     # Terraform for AWS resources
+│   │   ├── main.tf                   # EKS, VPC, RDS, ECR, S3
+│   │   ├── variables.tf              # Input variables
+│   │   ├── provider.tf               # AWS provider configuration
+│   │   └── output.tf                 # Output values
+│   ├── charts/                       # Helm charts
+│   │   ├── backend/                  # Backend deployment
+│   │   ├── frontend/                 # Frontend deployment
+│   │   ├── argocd/                   # GitOps controller
+│   │   ├── kube-prometheus-stack/    # Monitoring stack
+│   │   ├── argocd-image-updater/     # Automatic image updates
+│   │   └── shared/                   # Shared resources (Ingress, etc.)
+│   ├── helm-release/                 # Helm deployment scripts
+│   └── _root-apps/                   # ArgoCD Application definitions
+├── docker-compose.yml                # Local development
+└── README.md
 ```
 
----
+## 🚀 Complete Deployment Guide
 
-## Local Development
+This guide will walk you through deploying the entire infrastructure and application stack from scratch.
 
-### Backend
+### Prerequisites
+
+Before starting, ensure you have the following tools installed and configured:
+
+```bash
+# Required tools
+- AWS CLI (configured with appropriate permissions)
+- kubectl (Kubernetes command-line tool)
+- Terraform (>= 1.0)
+- Helm (>= 3.0)
+- Docker
+- Git
+
+# Verify installations
+aws --version
+kubectl version --client
+terraform --version
+helm version
+docker --version
+```
+
+### Step 1: Deploy AWS Infrastructure
+
+The first step is to provision all AWS resources using Terraform.
+
+#### 1.1 Configure AWS CLI
+
+```bash
+# Configure AWS CLI with your credentials
+aws configure
+
+# Verify configuration
+aws sts get-caller-identity
+```
+
+#### 1.2 Deploy Core Infrastructure
+
+Navigate to the infrastructure directory and deploy the core AWS resources:
+
+```bash
+cd infrastructure/_cluster
+
+# Initialize Terraform
+terraform init
+
+# Review the plan (optional but recommended)
+terraform plan
+
+# Apply the infrastructure
+terraform apply
+```
+
+**What gets deployed:**
+- **EKS Cluster**: Kubernetes cluster with managed node groups
+- **VPC**: Custom VPC with public/private subnets using custom module
+- **RDS PostgreSQL**: Managed database instance
+- **ECR Repositories**: Private container registries for frontend/backend
+- **S3 Bucket**: Remote state storage for Terraform
+- **IAM Policies**: Service accounts and permissions
+- **ACM Certificate**: SSL certificate for HTTPS
+- **Security Groups**: Network security rules
+- **Secrets Manager**: Database credentials storage
+
+#### 1.3 Update kubeconfig
+
+After the EKS cluster is created, update your kubeconfig:
+
+```bash
+# Update kubeconfig to connect to your EKS cluster
+aws eks update-kubeconfig --region eu-north-1 --name nyc-fhv-cluster
+
+# Verify connection
+kubectl get nodes
+```
+
+### Step 2: Deploy Helm Charts
+
+Deploy ArgoCD and other essential services using Terraform:
+
+```bash
+cd infrastructure/helm-release
+
+# Initialize Terraform
+terraform init
+
+# Apply Helm releases
+terraform apply
+```
+
+**What gets deployed:**
+- **ArgoCD**: GitOps controller for application deployment
+- **ArgoCD Image Updater**: Automatic image updates from ECR
+- **kube-prometheus-stack**: Monitoring with Prometheus and Grafana
+- **AWS Load Balancer Controller**: For ALB ingress
+- **External Secrets Operator**: For secrets management
+
+### Step 3: Configure ArgoCD
+
+#### 3.1 Access ArgoCD
+
+```bash
+# Get ArgoCD admin password
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+
+# Port forward ArgoCD server
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+```
+
+#### 3.2 Login to ArgoCD
+
+1. Open your browser and go to `https://localhost:8080`
+2. Login with:
+   - **Username**: `admin`
+   - **Password**: (the password from step 3.1)
+
+#### 3.3 Add Git Repository
+
+1. In ArgoCD UI, go to **Settings** → **Repositories**
+2. Click **Connect Repo**
+3. Fill in the details:
+   - **Repository URL**: `https://github.com/Isrealade/nyc_fhv_analytics-sndx.git`
+   - **Connection Method**: HTTPS
+   - **Username**: (your GitHub username)
+   - **Password**: (your GitHub personal access token)
+
+### Step 4: Trigger CI/CD Pipeline
+
+#### 4.1 Manual Pipeline Trigger
+
+Since the ECR repositories are now ready, trigger the CI/CD pipeline:
+
+1. Go to your GitHub repository
+2. Navigate to **Actions** tab
+3. Select **Backend CI** workflow
+4. Click **Run workflow** → **Run workflow**
+5. Repeat for **Frontend CI** workflow
+
+**What happens during CI/CD:**
+- **Build**: Docker images for frontend and backend
+- **Security Scan**: Trivy vulnerability scanning
+- **Secret Scan**: TruffleHog secret detection
+- **Code Quality**: SonarQube analysis
+- **Push**: Images pushed to ECR with commit hash tags
+
+#### 4.2 Update Image Tags
+
+After the CI/CD pipeline completes, update the image tags in the Helm charts:
+
+```bash
+# Update backend image tag
+cd infrastructure/charts/backend
+# Edit values.yaml and update the tag to the new commit hash
+
+# Update frontend image tag  
+cd infrastructure/charts/frontend
+# Edit values.yaml and update the tag to the new commit hash
+```
+
+#### 4.3 Update ACM Certificate
+
+Update the ingress configuration to use the ACM certificate:
+
+```bash
+# Edit infrastructure/charts/shared/ingress.yaml
+# Update the certificate ARN with the one from Terraform output
+```
+
+#### 4.4 Commit and Push Changes
+
+```bash
+# Add all changes
+git add .
+
+# Commit with descriptive message
+git commit -m "Update image tags and ACM certificate for production deployment"
+
+# Push to remote repository
+git push origin main
+```
+
+### Step 5: Deploy Applications via ArgoCD
+
+#### 5.1 Deploy Root Application
+
+```bash
+cd infrastructure/charts/_root-apps
+
+# Apply the infrastructure application
+kubectl apply -f infrastructure-app.yaml
+```
+
+#### 5.2 Verify ArgoCD Deployment
+
+1. Go back to ArgoCD UI
+2. You should see the **infrastructure** application and all child applications:
+   - **backend**: Backend service deployment
+   - **frontend**: Frontend service deployment
+   - **argocd**: ArgoCD itself (self-managed)
+   - **kube-prometheus-stack**: Monitoring stack
+
+#### 5.3 Monitor Deployment
+
+Watch the applications sync in ArgoCD:
+- Applications will show as **OutOfSync** initially
+- Click **Sync** to start deployment
+- Monitor the deployment progress
+- Applications should eventually show as **Healthy**
+
+### Step 6: Verify Production Deployment
+
+#### 6.1 Check Application Status
+
+```bash
+# Check all pods are running
+kubectl get pods -A
+
+# Check services
+kubectl get svc
+
+# Check ingress
+kubectl get ingress
+```
+
+#### 6.2 Access the Application
+
+The application will be available through the ALB ingress at your configured domain:
+
+- **Main URL**: `https://css.redeploy.online`
+- **Frontend**: Dashboard and search interface at the root path
+- **Backend API**: 
+  - `https://css.redeploy.online/drivers` - Driver search and management
+  - `https://css.redeploy.online/stats` - Statistics and analytics
+  - `https://css.redeploy.online/health` - Health check endpoint
+
+**Note**: The ingress uses an Application Load Balancer (ALB) with SSL/TLS termination using your ACM certificate. Make sure your domain `css.redeploy.online` is properly configured in your DNS to point to the ALB endpoint.
+
+#### 6.3 Get ALB Endpoint
+
+To find the ALB endpoint for DNS configuration:
+
+```bash
+# Get the ALB hostname
+kubectl get ingress nyc-fhv-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+
+# Or describe the ingress for more details
+kubectl describe ingress nyc-fhv-ingress
+```
+
+Update your DNS CNAME record to point your domain `css.redeploy.online` to the ALB hostname.
+
+#### 6.4 Verify SSL Certificate
+
+```bash
+# Check certificate status
+kubectl describe ingress nyc-fhv-ingress
+```
+
+## 🔄 CI/CD Pipeline Details
+
+### Backend Pipeline (`.github/workflows/ci-backend.yaml`)
+
+**Triggers:**
+- Push to `main` branch affecting `backend/` directory
+- Pull requests to `main` affecting `backend/` directory
+
+**Pipeline Steps:**
+1. **Checkout Code**: Clone repository
+2. **Setup Node.js**: Install Node.js 20
+3. **Install Dependencies**: `npm ci`
+4. **Run Tests**: Execute Jest test suite
+5. **Security Scan**: TruffleHog secret detection
+6. **Code Quality**: SonarQube analysis
+7. **Build Docker Image**: Multi-stage build
+8. **Vulnerability Scan**: Trivy security scan
+9. **Push to ECR**: Tag with commit hash and push
+
+### Frontend Pipeline (`.github/workflows/ci-frontend.yaml`)
+
+**Triggers:**
+- Push to `main` branch affecting `frontend/` directory
+- Pull requests to `main` affecting `frontend/` directory
+
+**Pipeline Steps:**
+1. **Checkout Code**: Clone repository
+2. **Setup Node.js**: Install Node.js 20
+3. **Install Dependencies**: `npm ci`
+4. **Security Scan**: TruffleHog secret detection
+5. **Code Quality**: SonarQube analysis
+6. **Build Docker Image**: Multi-stage build with Nginx
+7. **Vulnerability Scan**: Trivy security scan
+8. **Push to ECR**: Tag with commit hash and push
+
+## 🛡️ Security Features
+
+### Container Security
+- **Non-root users**: All containers run as non-root
+- **Read-only filesystems**: Immutable container filesystems
+- **Minimal base images**: Alpine Linux for smaller attack surface
+- **Vulnerability scanning**: Trivy scans on every build
+
+### Network Security
+- **VPC isolation**: Private subnets for database and application pods
+- **Security groups**: Restrictive network access rules
+- **TLS encryption**: HTTPS everywhere with ACM certificates
+- **Private ECR**: Container images stored in private repositories
+
+### Secrets Management
+- **AWS Secrets Manager**: Database credentials stored securely
+- **CSI Driver**: Kubernetes secrets integration
+- **No hardcoded secrets**: All sensitive data externalized
+- **Rotation support**: Secrets can be rotated without code changes
+
+## 📊 Monitoring & Observability
+
+### Prometheus Stack
+- **Prometheus**: Metrics collection and storage
+- **Grafana**: Dashboards and visualization
+- **AlertManager**: Alert routing and management
+- **Node Exporter**: Node-level metrics
+- **kube-state-metrics**: Kubernetes object metrics
+
+### Key Metrics
+- **Application**: Response times, error rates, request counts
+- **Infrastructure**: CPU, memory, disk usage
+- **Database**: Connection counts, query performance
+- **Kubernetes**: Pod health, resource utilization
+
+### Accessing Monitoring
+
+```bash
+# Port forward Grafana
+kubectl port-forward svc/kube-prometheus-stack-grafana -n monitoring 3000:80
+
+# Access Grafana at http://localhost:3000
+# Default credentials: admin/prom-operator
+```
+
+## 🔧 Local Development
+
+### Backend Development
 
 ```bash
 cd backend
 cp .env.example .env
 npm install
-npm run seed   # optional: one-time data sync
-npm run dev    # http://localhost:4000
+npm run dev  # Starts on port 4000
 ```
 
-### Frontend
+### Frontend Development
 
 ```bash
 cd frontend
 cp .env.example .env
 npm install
-npm run dev    # http://localhost:5173
+npm run dev  # Starts on port 5173
 ```
 
 ### Full Stack with Docker Compose
 
 ```bash
+# Start all services locally
 docker-compose up --build
+
+# Access application
+# Frontend: http://localhost:5173
+# Backend: http://localhost:4000
+# Database: localhost:5432
 ```
 
-* Frontend: [http://localhost:5173](http://localhost:5173)
-* Backend: [http://localhost:4000](http://localhost:4000)
-* Postgres: localhost:5432
+## 🗑️ Cleanup
 
----
-
-## Continuous Integration / Deployment
-
-### Frontend CI (`.github/workflows/ci-frontend.yaml`)
-
-* Triggered on push or PR affecting `frontend/`.
-* Steps:
-
-  1. Install dependencies and cache `node_modules`.
-  2. Lint & test.
-  3. Secret scanning via TruffleHog.
-  4. SonarQube analysis.
-  5. Build Docker image and scan with Trivy.
-  6. Push image to **AWS ECR**.
-
-### Backend CI (`.github/workflows/ci-backend.yaml`)
-
-* Triggered on push or PR affecting `backend/`.
-* Steps:
-
-  1. Install dependencies and cache `node_modules`.
-  2. Lint & test with Postgres service.
-  3. Secret scanning via TruffleHog.
-  4. SonarQube analysis.
-  5. Build Docker image and scan with Trivy.
-  6. Push image to **AWS ECR**.
-
----
-
-## AWS Setup
-
-### Secrets Manager
-
-* Create a secret for the database:
-
-```
-Secret Name: pg-db-secret
-Keys:
-  - dbusername
-  - dbpassword
-```
-
-* Backend service retrieves credentials from this secret.
-
-### Terraform Infrastructure
-
-* Provision resources using `_cluster/` Terraform:
-
-  * EKS cluster
-  * RDS Postgres
-  * S3 bucket (for remote state)
-  * Private VPC using custom module
-* After provisioning, Helm charts deploy services to the cluster.
-
----
-
-## ArgoCD Setup & Deployment
-
-1. Install ArgoCD on the EKS cluster.
-2. Fetch ArgoCD admin password:
+### Destroy Applications
 
 ```bash
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+# Delete ArgoCD applications
+kubectl delete -f infrastructure/charts/_root-apps/infrastructure-app.yaml
+
+# Delete ArgoCD namespace
+kubectl delete namespace argocd
 ```
 
-3. Port-forward ArgoCD server:
+### Destroy Infrastructure
 
 ```bash
-kubectl port-forward svc/argocd-server -n argocd 8080:443
-```
-
-4. Login using admin credentials.
-5. Connect your Git repository in ArgoCD.
-6. Deploy apps from `infrastructure/charts/rootapps`:
-
-```bash
-cd infrastructure/charts/rootapps
-kubectl apply -f infrastructure-app.yaml
-```
-
-* App of Apps pattern: all services will be deployed and monitored automatically.
-* Services: `frontend`, `backend`
-* Ingress: `nyc-fhv-ingress`
-
-**ArgoCD Image Updater** automatically updates Docker images from ECR to running deployments.
-
----
-
-## Monitoring
-
-* **Prometheus** and **Grafana** deployed via `kube-prometheus-stack`.
-* Metrics are collected for cluster and services.
-* Dashboards are accessible through Grafana (port-forward or ingress).
-
----
-
-## Destroying the Cluster & Services
-
-1. Disconnect repository from ArgoCD.
-2. Delete the `argocd` namespace:
-
-```bash
-kubectl delete ns argocd
-```
-
-3. Delete all deployments in `default` namespace:
-
-```bash
-kubectl delete deploy frontend backend
-kubectl delete svc frontend backend
-```
-
-4. Delete the ingress:
-
-```bash
+# 1. Delete ingress first (to avoid ALB deletion issues)
 kubectl delete ingress nyc-fhv-ingress
+
+# 2. Destroy Helm releases
+cd infrastructure/helm-release
+terraform destroy
+
+# 3. Destroy AWS infrastructure
+cd infrastructure/_cluster
+terraform destroy
 ```
 
-5. Optionally, destroy Terraform infrastructure to remove EKS, RDS, VPC, and S3 resources.
+## 🚨 Troubleshooting
 
----
+### Common Issues
+
+1. **ArgoCD not syncing**
+   - Check repository connection in ArgoCD UI
+   - Verify Git credentials
+   - Check application sync policy
+
+2. **Pods not starting**
+   - Check resource limits and requests
+   - Verify image tags in values.yaml
+   - Check pod logs: `kubectl logs <pod-name>`
+
+3. **Database connection issues**
+   - Verify Secrets Manager configuration
+   - Check security group rules
+   - Verify RDS endpoint
+
+4. **Ingress not working**
+   - Check ALB controller logs
+   - Verify certificate ARN
+   - Check DNS configuration
+
+### Useful Commands
+
+```bash
+# Check pod status
+kubectl get pods -A
+
+# View pod logs
+kubectl logs -f <pod-name> -n <namespace>
+
+# Check ingress status
+kubectl describe ingress nyc-fhv-ingress
+
+# Check ArgoCD applications
+kubectl get applications -n argocd
+
+# Port forward services
+kubectl port-forward svc/<service-name> <local-port>:<service-port>
+```
+
+## 📚 Additional Resources
+
+- [AWS EKS Documentation](https://docs.aws.amazon.com/eks/)
+- [ArgoCD Documentation](https://argo-cd.readthedocs.io/)
+- [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest)
+- [Helm Documentation](https://helm.sh/docs/)
+- [Kubernetes Documentation](https://kubernetes.io/docs/)
