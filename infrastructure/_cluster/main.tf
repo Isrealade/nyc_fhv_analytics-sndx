@@ -1,35 +1,4 @@
-module "vpc" {
-  source  = "Isrealade/vpc/aws"
-  version = "1.1.0"
-  name    = "css-vpc"
-  cidr    = "10.0.0.0/16"
 
-  public_subnet  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  private_subnet = ["10.0.10.0/24", "10.0.11.0/24", "10.0.12.0/24"]
-
-  private_ip_map = false
-
-  instance_tenancy     = "default"
-  enable_dns_support   = true
-  enable_dns_hostnames = true
-
-  ingress = []
-
-  public_subnet_tags = {
-    "kubernetes.io/role/elb"            = "1"
-    "kubernetes.io/cluster/css-cluster" = "shared"
-  }
-
-  private_subnet_tags = {
-    "kubernetes.io/role/internal-elb"   = "1"
-    "kubernetes.io/cluster/css-cluster" = "shared"
-  }
-
-  tags = {
-    Environment = "production"
-    Project     = "css-app"
-  }
-}
 
 module "eks" {
   source     = "terraform-aws-modules/eks/aws"
@@ -129,7 +98,7 @@ resource "aws_secretsmanager_secret" "pg" {
   name        = "pg-db-secret"
   description = "PostgreSQL credentials for backend"
 
-  depends_on = [ module.eks ]
+  depends_on = [module.eks]
 }
 
 resource "aws_acm_certificate" "cert" {

@@ -227,7 +227,7 @@ resource "aws_iam_role" "argocd_image_updater" {
         Condition = {
           StringEquals = {
             "${local.oidc_url}:sub" = "system:serviceaccount:argocd:argocd-image-updater"
-            # "${local.oidc_url}:aud" : "sts.amazonaws.com"
+            "${local.oidc_url}:aud" : "sts.amazonaws.com"
           }
         }
       }

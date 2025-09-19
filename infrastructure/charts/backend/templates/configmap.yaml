@@ -5,6 +5,6 @@ metadata:
   labels:
     {{- include "backend.labels" . | nindent 4 }}
 data:
-    PGHOST: "postgres.default.svc.cluster.local"
+    PGHOST: "css-db.ct6wueoyusxp.eu-north-1.rds.amazonaws.com:5432"
     PGPORT: "5432"
     PGDATABASE: "fhv"

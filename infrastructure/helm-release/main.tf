@@ -49,7 +49,7 @@ resource "helm_release" "aws_load_balancer_controller" {
   values = [
     yamlencode({
       clusterName = data.aws_eks_cluster.eks.name
-      vpcId       = data.aws_eks_cluster.eks.vpc_config[0].vpc_id  ### change this vpc data source to the vpc source
+      vpcId       = data.aws_eks_cluster.eks.vpc_config[0].vpc_id
       enableWaf   = false
       enableWafv2 = false 
       serviceAccount = {
@@ -71,17 +71,18 @@ resource "helm_release" "csi_driver" {
   version    = "1.4.0"
   namespace  = "kube-system"
 
-  set = {
+  set = [{
     name  = "syncSecret.enabled"
     value = "true"
   }
+  ]
 }
 
 resource "helm_release" "csi_aws_provider" {
   name       = "secrets-store-csi-driver-provider-aws"
   repository = "https://aws.github.io/secrets-store-csi-driver-provider-aws"
   chart      = "secrets-store-csi-driver-provider-aws"
-  version    = "2.0.0 "
+  # version    = "2.0.0 "
   namespace  = "kube-system"
 }
 
