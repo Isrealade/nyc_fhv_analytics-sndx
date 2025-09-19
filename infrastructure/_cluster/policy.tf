@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {
 }
 
 locals {
-  oidc_url = replace(module.eks.cluster_oidc_issuer_url, "https://", "")
+  oidc_url_arn = replace(module.eks.cluster_oidc_issuer_url, "https://", "")
 }
 
 
@@ -52,8 +52,8 @@ resource "aws_iam_role" "secret-manager" {
           Action = "sts:AssumeRoleWithWebIdentity"
           Condition = {
             StringEquals = {
-              "${module.eks.cluster_oidc_issuer_url}:sub" = "system:serviceaccount:default:secret-manager"
-              "${module.eks.cluster_oidc_issuer_url}:aud" = "sts.amazonaws.com"
+              "${local.oidc_url_arn}:sub" = "system:serviceaccount:default:secret-manager"
+              "${local.oidc_url_arn}:aud" = "sts.amazonaws.com"
             }
           }
         }
@@ -170,8 +170,8 @@ resource "aws_iam_role" "alb_controller" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "${local.oidc_url}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
-            "${local.oidc_url}:aud" = "sts.amazonaws.com"
+            "${local.oidc_url_arn}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
+            "${local.oidc_url_arn}:aud" = "sts.amazonaws.com"
           }
         }
       }
@@ -223,8 +223,8 @@ resource "aws_iam_role" "argocd_image_updater" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "${local.oidc_url}:sub" = "system:serviceaccount:argocd:argocd-image-updater"
-            "${local.oidc_url}:aud" : "sts.amazonaws.com"
+            "${local.oidc_url_arn}:sub" = "system:serviceaccount:argocd:argocd-image-updater"
+            "${local.oidc_url_arn}:aud" : "sts.amazonaws.com"
           }
         }
       }
