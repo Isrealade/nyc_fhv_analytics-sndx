@@ -59,12 +59,12 @@ spec:
             - name: PGUSER
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "backend.fullname" . }}-secret
+                  name: pg-db-secret
                   key: PGUSER
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "backend.fullname" . }}-secret
+                  name: pg-db-secret
                   key: PGPASSWORD
           ports:
             - name: http
