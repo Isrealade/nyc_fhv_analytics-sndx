@@ -29,8 +29,8 @@ resource "aws_iam_policy" "secret_manager_policy" {
             "secretsmanager:DescribeSecret"
           ],
           "Resource" : [
-            "arn:aws:secretsmanager:us-east-1:${data.aws_caller_identity.current.id}:secret:db_username",
-            "arn:aws:secretsmanager:us-east-1:${data.aws_caller_identity.current.id}:secret:db_password"
+            "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.id}:secret:db_username",
+            "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.id}:secret:db_password"
             # "arn:aws:secretsmanager:us-east-1:${data.aws_caller_identity.current.id}:secret:secretName3-AbCdEf"
           ]
         }
