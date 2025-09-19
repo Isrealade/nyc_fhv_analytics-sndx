@@ -10,33 +10,30 @@ resource "aws_iam_policy" "secret_manager_policy" {
   name        = "secret-manager"
   path        = "/"
   description = "Policy for cluster secrets"
-  policy = jsonencode(
-    {
-      "Version" : "2012-10-17",
-      "Statement" : [
-        {
-          "Effect" : "Allow",
-          "Action" : [
-            "secretsmanager:BatchGetSecretValue",
-            "secretsmanager:ListSecrets"
-          ],
-          "Resource" : "*"
-        },
-        {
-          "Effect" : "Allow",
-          "Action" : [
-            "secretsmanager:GetSecretValue",
-            "secretsmanager:DescribeSecret"
-          ],
-          "Resource" : [
-            "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.id}:secret:db_username",
-            "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.id}:secret:db_password"
-            # "arn:aws:secretsmanager:us-east-1:${data.aws_caller_identity.current.id}:secret:secretName3-AbCdEf"
-          ]
-        }
-      ]
-    }
-  )
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = [
+          "secretsmanager:BatchGetSecretValue",
+          "secretsmanager:ListSecrets"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = [
+          "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.id}:secret:pg-db-secret*"
+        ]
+      }
+    ]
+  })
 }
 
 
