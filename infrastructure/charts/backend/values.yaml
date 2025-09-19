@@ -84,7 +84,7 @@ volumes:
     driver: secrets-store.csi.k8s.io
     readOnly: true
     volumeAttributes:
-      secretProviderClass: "database_secret"
+      secretProviderClass: "database-secret"
 # - name: foo
 #   secret:
 #     secretName: mysecret
