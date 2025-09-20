@@ -6,16 +6,6 @@ variable "region" {
   type        = string
 }
 
-variable "environment" {
-  description = "Environment name (e.g., dev, staging, production)"
-  type        = string
-}
-
-variable "project" {
-  description = "Project or application name"
-  type        = string
-}
-
 variable "tags" {
   description = "Common resource tags"
   type        = map(string)
@@ -26,7 +16,7 @@ variable "tags" {
 # S3 Bucket Variables
 #########################
 
-variable "s3_bucket_config" {
+variable "s3" {
   description = "Configuration for the S3 bucket"
   type = object({
     bucket_name         = string
@@ -49,129 +39,126 @@ variable "s3_bucket_config" {
 ############################
 # VPC
 ############################
-variable "vpc_name" {
-  description = "Name for the VPC"
-  type        = string
+variable "vpc" {
+  description = "Configuration for VPC module."
+  type = object({
+    name                 = string
+    cidr                 = string
+    instance_tenancy     = string
+    enable_dns_support   = bool
+    enable_dns_hostnames = bool
+    private_ip_map       = bool
+
+    # public_subnet = optional(list(string))
+    # private_subnet = optional(list(string))
+    public_subnet_count  = number
+    private_subnet_count = number
+    enable_nat           = bool
+    single_nat           = bool
+    # one_nat_per_az = bool
+
+    create_db_subnet     = bool
+    db_subnet_group_name = string
+    db_subnet_group_tags = map(string)
+
+    ingress = list(string)
+    # custom_ingress = optional(object)
+
+    public_subnet_tags  = map(string)
+    private_subnet_tags = map(string)
+    tags                = map(string)
+  })
 }
 
-variable "vpc_cidr" {
-  description = "CIDR block for the VPC"
-  type        = string
-}
-
-variable "public_subnet_count" {
-  description = "Number of public subnets"
-  type        = number
-}
-
-variable "private_subnet_count" {
-  description = "Number of private subnets"
-  type        = number
-}
-
-variable "enable_nat" {
-  description = "Enable NAT gateways"
-  type        = bool
-}
-
-variable "single_nat" {
-  description = "Use a single NAT gateway across AZs"
-  type        = bool
-}
-
-variable "create_db_subnet" {
-  description = "Create DB subnet group"
-  type        = bool
-}
-
-variable "db_subnet_group_name" {
-  description = "Name for DB subnet group"
-  type        = string
-}
 
 ############################
 # EKS
 ############################
-variable "eks_cluster_name" {
-  description = "EKS cluster name"
-  type        = string
-}
+variable "eks" {
+  description = "Configuration for EKS"
+  type = object({
+    cluster_name                             = string
+    kubernetes_version                       = string
+    endpoint_public_access                   = bool
+    enable_cluster_creator_admin_permissions = bool
 
-variable "kubernetes_version" {
-  description = "Kubernetes version for the EKS cluster"
-  type        = string
-}
+    eks_managed_node_groups = map(object({
+      ec2 = object({
+        ami_type       = string
+        instance_types = list(string)
+        min_size       = number
+        max_size       = number
+        desired_size   = number
+      })
+    }))
 
-variable "endpoint_public_access" {
-  description = "Allow public access to EKS endpoint"
-  type        = bool
+    addons = map(any)
+    tags   = map(string)
+  })
 }
 
 ############################
 # ECR
 ############################
-variable "repositories" {
-  description = "List of ECR repositories to create"
-  type        = list(string)
+variable "ecr" {
+  description = "Configuration for ECR"
+  type = object({
+    repositories                           = list(string)
+    repository_type                        = string
+    repository_force_delete                = bool
+    repository_image_scan_on_push          = bool
+    manage_registry_scanning_configuration = bool
+    registry_scan_type                     = string
+    tags                                   = map(string)
+  })
 }
 
 ############################
 # RDS
 ############################
-variable "db_identifier" {
-  description = "RDS instance identifier"
-  type        = string
+variable "db" {
+  description = "Configuration for RDS Instance"
+  type = object({
+    identifier                          = string
+    engine                              = string
+    engine_version                      = string
+    instance_class                      = string
+    allocated_storage                   = string
+    storage_type                        = string
+    create_db_instance                  = bool
+    create_db_parameter_group           = bool
+    create_db_option_group              = bool
+    iam_database_authentication_enabled = bool
+    create_monitoring_role              = bool
+    db_name                             = string
+    username                            = string
+    password                            = string
+    port                                = number
+    deletion_protection                 = bool
+    security_group_tags                 = map(string)
+    tags                                = map(string)
+  })
 }
 
-variable "db_engine" {
-  description = "Database engine (e.g., postgres)"
-  type        = string
-}
-
-variable "db_engine_version" {
-  description = "Database engine version"
-  type        = string
-}
-
-variable "db_instance_class" {
-  description = "RDS instance type"
-  type        = string
-}
-
-variable "db_allocated_storage" {
-  description = "Allocated storage in GB"
-  type        = number
-}
-
-variable "db_storage_type" {
-  description = "Storage type (gp2/gp3)"
-  type        = string
-}
-
-variable "db_name" {
-  description = "Database name"
-  type        = string
-}
-
-variable "db_username" {
-  description = "Master username"
-  type        = string
-}
-
-variable "db_password" {
-  description = "Master password"
-  type        = string
-}
-
-variable "db_port" {
-  description = "Database port"
-  type        = number
+############################
+# Secret Manager
+############################
+variable "secret-manager" {
+  description = "Configuration for Secret manager"
+  type = object({
+    name        = string
+    description = string
+  })
 }
 
 ############################
 # ACM
 ############################
-variable "domain_name" {
-  description = "Domain name for ACM certificate"
-  type        = string
+variable "acm" {
+  description = "Configuration for ACM certificate"
+  type = object({
+    domain_name       = string
+    validation_method = string
+    tags              = map(string)
+  })
 }

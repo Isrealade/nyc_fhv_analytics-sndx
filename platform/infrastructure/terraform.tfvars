@@ -1,14 +1,15 @@
 # ===== Global =====
-region      = "eu-north-1"
-environment = "production"
-project     = "css-app"
+region = "eu-north-1"
+
 
 tags = {
-  Terraform = "true"
+  Project     = "css-app"
+  Environment = "prod"
+  Terraform   = "true"
 }
 
 # ===== S3 Bucket =====
-s3_bucket_config = {
+s3 = {
   bucket_name         = "css-bucket"
   force_destroy       = true
   object_lock_enabled = true
@@ -20,41 +21,118 @@ s3_bucket_config = {
   create_kms_key      = true
   key_rotation        = true
   deletion_window     = 7
+
   tags = {
-    tier = "remote-state"
+    Purpose = "remote-state"
   }
 }
 
 # ===== VPC =====
-vpc_name             = "css-vpc"
-vpc_cidr             = "10.0.0.0/16"
-public_subnet_count  = 3
-private_subnet_count = 3
-enable_nat           = true
-single_nat           = true
-create_db_subnet     = true
-db_subnet_group_name = "css-db_subnet_group"
+vpc = {
+  name                 = "css-vpc"
+  cidr                 = "10.0.0.0/16"
+  instance_tenancy     = "default"
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+  private_ip_map       = false
+
+  # public_subnet = var.vpc.public_subnet
+  # private_subnet = var.vpc.private_subnet
+  public_subnet_count  = 3
+  private_subnet_count = 3
+  enable_nat           = true
+  single_nat           = true
+  # one_nat_per_az = false
+
+  create_subnet     = true
+  subnet_group_name = "css-subnet_group"
+  subnet_group_tag  = {}
+
+  ingress = ["https", "postgres"]
+  # custom_ingress = {}
+
+  public_subnet_tags = {
+    "kubernetes.io/role/elb"                            = "1"
+    "kubernetes.io/cluster/${var.vpc.eks_cluster_name}" = "shared"
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/role/internal-elb"                   = "1"
+    "kubernetes.io/cluster/${var.vpc.eks_cluster_name}" = "shared"
+  }
+
+  tags = {
+    Environment = "dev"
+    Owner       = "Isreal"
+  }
+}
+
 
 # ===== EKS =====
-eks_cluster_name       = "css-cluster"
-kubernetes_version     = "1.33"
-endpoint_public_access = true
+eks = {
+  eks_cluster_name                         = "my-cluster"
+  kubernetes_version                       = "1.33"
+  endpoint_public_access                   = true
+  enable_cluster_creator_admin_permissions = true
 
+  # Managed Node Group configuration
+  eks_managed_node_groups = {
+    example = {
+      ami_type       = "AL2023_x86_64_STANDARD"
+      instance_types = ["m5.xlarge"]
+      min_size       = 2
+      max_size       = 10
+      desired_size   = 2
+    }
+  }
+
+  # Addons
+  addons = {
+    coredns                = {}
+    eks-pod-identity-agent = { before_compute = true }
+    kube-proxy             = {}
+    vpc-cni                = { before_compute = true }
+  }
+}
 # ===== ECR =====
-repositories = [
-  "frontend-service",
-  "backend-service"
-]
+ecr = {
+  repositories                           = ["frontend-service", "backend-service"]
+  repository_type                        = "private"
+  repository_force_delete                = false
+  repository_image_scan_on_push          = true
+  manage_registry_scanning_configuration = false
+  registry_scan_type                     = "STANDARD"
+
+  tags = {}
+}
 
 # ===== RDS =====
-db_identifier        = "css-db"
-db_engine            = "postgres"
-db_engine_version    = "17.4"
-db_instance_class    = "db.t3.micro"
-db_allocated_storage = 20
-db_storage_type      = "gp3"
-db_name              = "fhv"
-db_port              = 5432
+db = {
+  identifier                          = "css-db"
+  engine                              = "postgres"
+  engine_version                      = "17.4"
+  instance_class                      = "db.t3.micro"
+  allocated_storage                   = 20
+  storage_type                        = "gp3"
+  create_db_instance                  = true
+  create_db_parameter_group           = false
+  create_db_option_group              = false
+  iam_database_authentication_enabled = false
+  create_monitoring_role              = false
+  db_name                             = string
+  port                                = 5432
+  deletion_protection                 = false
 
+  security_group_tags = {
+    "app"     = "rds-db"
+    "Purpose" = "security group"
+  }
+  tags = {}
+}
 # ===== ACM =====
-domain_name = "css.redeploy.online"
+acm = {
+  domain_name       = "css.redeploy.online"
+  validation_method = "DNS"
+
+  tags = {}
+}
