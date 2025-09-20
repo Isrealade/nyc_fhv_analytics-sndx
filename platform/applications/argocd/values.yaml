@@ -89,7 +89,7 @@ global:
   podLabels: {}
 
   # -- Add Prometheus scrape annotations to all metrics services. This can be used as an alternative to the ServiceMonitors.
-  addPrometheusAnnotations: false
+  addPrometheusAnnotations: true
 
   # -- Toggle and define pod-level security context.
   # @default -- `{}` (See [values.yaml])

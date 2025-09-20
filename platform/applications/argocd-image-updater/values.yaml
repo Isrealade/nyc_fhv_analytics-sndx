@@ -177,8 +177,8 @@ config:
     #   prefix: quay.io
     #   credentials: env:REGISTRY_SECRET
     - name: ECR
-      api_url: https://501818865030.dkr.ecr.us-east-1.amazonaws.com
-      prefix: 501818865030.dkr.ecr.us-east-1.amazonaws.com
+      api_url: https://501818865030.dkr.ecr.eu-north-1.amazonaws.com
+      prefix: 501818865030.dkr.ecr.eu-north-1.amazonaws.com
       ping: yes
       insecure: no
       credentials: ecr
@@ -211,13 +211,13 @@ authScripts:
   ## Expect the script to output Docker credentials in the form: <username>:<password>
   ## Authentication scripts can be used for various cloud providers like ECR or Azure Workload Identity.
   ## For Azure Workload Identity, you can place your authentication script here to handle token acquisition.
-  scripts: {}
-    # auth1.sh: |
-    #   #!/bin/sh
-    #   REGION="us-east-1"
-    #   ACCOUNT_ID="501818865030"
-    #   PASSWORD=$(aws ecr get-login-password --region $REGION)
-    #   echo "AWS:$PASSWORD"
+  scripts:
+    auth1.sh: |
+      #!/bin/sh
+      REGION="eu-north-1"
+      ACCOUNT_ID="501818865030"
+      PASSWORD=$(aws ecr get-login-password --region $REGION)
+      echo "AWS:$PASSWORD"
     # auth2.sh: |
     #   #!/bin/sh
     #   echo "auth script 2 here"
