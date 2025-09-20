@@ -197,34 +197,78 @@ terraform apply
 - **External Secrets Operator**: For secrets management
 
 ### Step 3: Configure ArgoCD
+---
 
-#### 3.1 Access ArgoCD
+### Step 3: Configure ArgoCD
+
+### 3.1. Install ArgoCD on EKS Cluster
+
+ArgoCD is deployed via Helm chart as part of the infrastructure provisioning.
+
+### 3.2. Generate SSH Key for GitHub Repository
+
+Create an SSH key specifically for ArgoCD to access your GitHub repository:
 
 ```bash
-# Get ArgoCD admin password
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+# Generate SSH key pair
+ssh-keygen -t rsa -b 4096 -C "argocd@nyc-fhv-analytics" -f ~/.ssh/argocd_rsa
 
-# Port forward ArgoCD server
+# Set proper permissions
+chmod 600 ~/.ssh/argocd_rsa
+chmod 644 ~/.ssh/argocd_rsa.pub
+```
+
+### 3.3. Add SSH Public Key to GitHub Repository
+
+1. Copy the public key:
+```bash
+cat ~/.ssh/argocd_rsa.pub
+```
+
+2. Add the public key to your GitHub repository:
+   - Go to your GitHub repository: `Isrealade/nyc_fhv_analytics-sndx`
+   - Navigate to **Settings** → **Deploy keys**
+   - Click **Add deploy key**
+   - Title: `ArgoCD Deploy Key`
+   - Key: Paste the public key content
+   - Check **Allow write access** (required for ArgoCD Image Updater)
+   - Click **Add key**
+
+### 3.4. Create ArgoCD Repository Secret
+
+Create a Kubernetes secret for ArgoCD to authenticate with your GitHub repository:
+
+```bash
+# Create the repository secret
+kubectl create secret generic nyc-fhv \
+  --namespace argocd \
+  --from-file=sshPrivateKey=$HOME/.ssh/argocd_rsa \
+  --from-literal=type=git \
+  --from-literal=name=nyc-fhv \
+  --from-literal=project=default \
+  --from-literal=url=git@github.com:Isrealade/nyc_fhv_analytics-sndx.git
+
+# Label the secret for ArgoCD to recognize it
+kubectl label secret nyc-fhv \
+  -n argocd argocd.argoproj.io/secret-type=repository --overwrite
+```
+
+### 3.5. Access ArgoCD UI to View Apps
+
+1. Fetch ArgoCD admin password:
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
+
+2. Port-forward ArgoCD server:
+```bash
 kubectl port-forward svc/argocd-server -n argocd 8080:443
 ```
 
-#### 3.2 Login to ArgoCD
+3. Access ArgoCD UI at: `https://localhost:8080`
+4. Login with username `admin` and the password from step 1
 
-1. Open your browser and go to `https://localhost:8080`
-2. Login with:
-   - **Username**: `admin`
-   - **Password**: (the password from step 3.1)
-
-#### 3.3 Add Git Repository
-
-1. In ArgoCD UI, go to **Settings** → **Repositories**
-2. Click **Connect Repo**
-3. Fill in the details:
-   - **Repository URL**: `https://github.com/Isrealade/nyc_fhv_analytics-sndx.git`
-   - **Connection Method**: HTTPS
-   - **Username**: (your GitHub username)
-   - **Password**: (your GitHub personal access token)
-
+---
 ### Step 4: Trigger CI/CD Pipeline
 
 #### 4.1 Manual Pipeline Trigger
@@ -290,15 +334,19 @@ cd platform/applications/parent
 # Apply the infrastructure application
 kubectl apply -f infrastructure-app.yaml
 ```
+This will automatically deploy:
+- **Backend service** with database connectivity
+- **Frontend service** with proper API configuration
+- **Monitoring stack** (Prometheus/Grafana)
+- **Argocd**: ArgoCD itself (self-managed)
+- **Ingress controller** with TLS certificates
 
-#### 5.2 Verify ArgoCD Deployment
+### 5.2. Verify Deployment
 
-1. Go back to ArgoCD UI
-2. You should see the **infrastructure** application and all child applications:
-   - **backend**: Backend service deployment
-   - **frontend**: Frontend service deployment
-   - **argocd**: ArgoCD itself (self-managed)
-   - **kube-prometheus-stack**: Monitoring stack
+Check that all applications are synced and healthy in the ArgoCD UI:
+- All applications should show "Synced" status
+
+**ArgoCD Image Updater** automatically updates Docker images from ECR to running deployments when new images are pushed.
 
 #### 5.3 Monitor Deployment
 
@@ -538,24 +586,24 @@ terraform destroy
 ### Common Issues
 
 1. **ArgoCD not syncing**
-   - Check repository connection in ArgoCD UI
-   - Verify Git credentials
-   - Check application sync policy
+- Check repository connection in ArgoCD UI
+- Verify Git credentials
+- Check application sync policy
 
 2. **Pods not starting**
-   - Check resource limits and requests
-   - Verify image tags in values.yaml
-   - Check pod logs: `kubectl logs <pod-name>`
+- Check resource limits and requests
+- Verify image tags in values.yaml
+- Check pod logs: `kubectl logs <pod-name>`
 
 3. **Database connection issues**
-   - Verify Secrets Manager configuration
-   - Check security group rules
-   - Verify RDS endpoint
+- Verify Secrets Manager configuration
+- Check security group rules
+- Verify RDS endpoint
 
 4. **Ingress not working**
-   - Check ALB controller logs
-   - Verify certificate ARN
-   - Check DNS configuration
+- Check ALB controller logs
+- Verify certificate ARN
+- Check DNS configuration
 
 ### Useful Commands
 
