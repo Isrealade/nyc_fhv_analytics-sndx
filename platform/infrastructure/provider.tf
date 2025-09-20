@@ -9,7 +9,7 @@ terraform {
   }
 
   # backend "s3" {
-  #     bucket       = var.s3_bucket_config.bucket
+  #     bucket       = var.s3.bucket
   #     key          = "terraform/terraform.tfstate"
   #     region       = "var.region
   #     use_lockfile = true
