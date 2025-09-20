@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: git@github.com:Isrealade/nyc_fhv_analytics-sndx.git
     targetRevision: HEAD
-    path: infrastructure/charts/kube-prometheus-stack
+    path: platform/applications/kube-prometheus-stack
     helm:
       valueFiles:
         - ../values/kube-prometheus-values.yaml

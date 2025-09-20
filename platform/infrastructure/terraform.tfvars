@@ -88,10 +88,11 @@ eks = {
 
   # Addons
   addons = {
-    coredns                = {}
-    eks-pod-identity-agent = { before_compute = true }
-    kube-proxy             = {}
-    vpc-cni                = { before_compute = true }
+    kube-proxy         = {}
+    vpc-cni            = { before_compute = true }
+    aws-ebs-csi-driver = { preserve = false }
+    coredns            = { preserve = false }
+    metrics-server     = { preserve = false }
   }
 }
 # ===== ECR =====

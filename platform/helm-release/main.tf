@@ -17,7 +17,6 @@ resource "kubernetes_namespace" "calico-systems" {
   }
 }
 
-
 resource "kubernetes_service_account" "secret-manager" {
   metadata {
     name      = "secret-manager"
@@ -27,7 +26,6 @@ resource "kubernetes_service_account" "secret-manager" {
     }
   }
 }
-
 
 resource "kubernetes_service_account" "alb_controller" {
   metadata {

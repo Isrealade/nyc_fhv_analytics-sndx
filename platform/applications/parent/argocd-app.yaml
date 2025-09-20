@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: git@github.com:Isrealade/nyc_fhv_analytics-sndx.git
     targetRevision: HEAD
-    path: infrastructure/charts/argocd
+    path: platform/applications/argocd 
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

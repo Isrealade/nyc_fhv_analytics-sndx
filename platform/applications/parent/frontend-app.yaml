@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: git@github.com:Isrealade/nyc_fhv_analytics-sndx.git
     targetRevision: HEAD
-    path: infrastructure/charts/frontend
+    path: platform/applications/frontend
   destination:
     server: https://kubernetes.default.svc
     namespace: default

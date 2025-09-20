@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: git@github.com:Isrealade/nyc_fhv_analytics-sndx.git
     targetRevision: HEAD
-    path: infrastructure/charts/_root-apps       # <-- folder containing child apps
+    path: platform/applications/parent      # <-- folder containing child apps
   destination:
     server: https://kubernetes.default.svc
     namespace: default
