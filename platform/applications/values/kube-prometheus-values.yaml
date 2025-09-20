@@ -1,0 +1,40 @@
+alertmanager.alertmanagerSpec:
+  persistentVolumeClaimRetentionPolicy:
+     whenDeleted: Delete
+     whenScaled: Delete
+
+  storage: 
+    volumeClaimTemplate:
+      spec:
+        storageClassName: auto-ebs-sc
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi
+        selector: {}
+  replicas: 1
+  # externalUrl: http://alertmanager.example.com
+
+prometheus:
+  prometheusSpec:
+    scrapeInterval: 15s
+    evaluationInterval: 15s
+    retention: 15d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: auto-ebs-sc
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+
+grafana:
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+          access: proxy

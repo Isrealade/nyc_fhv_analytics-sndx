@@ -49,21 +49,21 @@ nyc_fhv_analytics-sndx/
 │   │   └── lib/                      # API client
 │   ├── Dockerfile                    # Multi-stage build with Nginx
 │   └── package.json
-├── infrastructure/                   # Infrastructure as Code
-│   ├── _cluster/                     # Terraform for AWS resources
+├── platform/                         # Platform Infrastructure & Applications
+│   ├── infrastructure/               # AWS core resources (Terraform)
 │   │   ├── main.tf                   # EKS, VPC, RDS, ECR, S3
 │   │   ├── variables.tf              # Input variables
 │   │   ├── provider.tf               # AWS provider configuration
 │   │   └── output.tf                 # Output values
-│   ├── charts/                       # Helm charts
+│   ├── applications/                 # All application deployments
 │   │   ├── backend/                  # Backend deployment
 │   │   ├── frontend/                 # Frontend deployment
 │   │   ├── argocd/                   # GitOps controller
 │   │   ├── kube-prometheus-stack/    # Monitoring stack
 │   │   ├── argocd-image-updater/     # Automatic image updates
-│   │   └── shared/                   # Shared resources (Ingress, etc.)
-│   ├── helm-release/                 # Helm deployment scripts
-│   └── _root-apps/                   # ArgoCD Application definitions
+│   │   ├── shared/                   # Shared resources (Ingress, etc.)
+│   │   └── parent/                   # Parent ArgoCD applications
+│   └── helm-release/                 # Helm deployment scripts
 ├── docker-compose.yml                # Local development
 └── README.md
 ```
@@ -109,10 +109,10 @@ aws sts get-caller-identity
 
 #### 1.2 Deploy Core Infrastructure
 
-Navigate to the infrastructure directory and deploy the core AWS resources:
+Navigate to the platform infrastructure directory and deploy the core AWS resources:
 
 ```bash
-cd infrastructure/_cluster
+cd platform/infrastructure
 
 # Initialize Terraform
 terraform init
@@ -120,20 +120,24 @@ terraform init
 # Review the plan (optional but recommended)
 terraform plan
 
-# Apply the infrastructure
+# Apply the infrastructure (will prompt for database credentials)
 terraform apply
 ```
+
+**During `terraform apply`, you will be prompted to enter:**
+- **Database Username**: The username for your RDS PostgreSQL instance
+- **Database Password**: The password for your RDS PostgreSQL instance
 
 **What gets deployed:**
 - **EKS Cluster**: Kubernetes cluster with managed node groups
 - **VPC**: Custom VPC with public/private subnets using custom module
-- **RDS PostgreSQL**: Managed database instance
+- **RDS PostgreSQL**: Managed database instance with your provided credentials
 - **ECR Repositories**: Private container registries for frontend/backend
 - **S3 Bucket**: Remote state storage for Terraform
 - **IAM Policies**: Service accounts and permissions
 - **ACM Certificate**: SSL certificate for HTTPS
 - **Security Groups**: Network security rules
-- **Secrets Manager**: Database credentials storage
+- **Secrets Manager**: Database credentials automatically stored as `pg-db-secret`
 
 #### 1.3 Update kubeconfig
 
@@ -147,12 +151,36 @@ aws eks update-kubeconfig --region eu-north-1 --name nyc-fhv-cluster
 kubectl get nodes
 ```
 
+#### 1.4 Migrate State to S3 Bucket
+
+After the main infrastructure is provisioned, migrate the Terraform state to the S3 bucket for encryption and protection:
+
+```bash
+# 1. Uncomment the backend S3 configuration in provider.tf
+# Edit platform/infrastructure/provider.tf and uncomment the backend "s3" block
+
+# 2. Re-initialize Terraform with the S3 backend
+terraform init
+
+# 3. When prompted, type 'yes' to migrate existing state to S3
+# This will move your local state file to the encrypted S3 bucket
+
+# 4. Verify state migration
+terraform show
+```
+
+**Benefits of S3 Backend:**
+- **Encryption**: State file is encrypted at rest
+- **Versioning**: State file versioning for rollback capability
+- **Team Collaboration**: Shared state for team members
+- **Locking**: Prevents concurrent modifications
+
 ### Step 2: Deploy Helm Charts
 
 Deploy ArgoCD and other essential services using Terraform:
 
 ```bash
-cd infrastructure/helm-release
+cd platform/helm-release
 
 # Initialize Terraform
 terraform init
@@ -222,11 +250,11 @@ After the CI/CD pipeline completes, update the image tags in the Helm charts:
 
 ```bash
 # Update backend image tag
-cd infrastructure/charts/backend
+cd platform/applications/backend
 # Edit values.yaml and update the tag to the new commit hash
 
 # Update frontend image tag  
-cd infrastructure/charts/frontend
+cd platform/applications/frontend
 # Edit values.yaml and update the tag to the new commit hash
 ```
 
@@ -235,7 +263,7 @@ cd infrastructure/charts/frontend
 Update the ingress configuration to use the ACM certificate:
 
 ```bash
-# Edit infrastructure/charts/shared/ingress.yaml
+# Edit platform/applications/shared/ingress.yaml
 # Update the certificate ARN with the one from Terraform output
 ```
 
@@ -257,7 +285,7 @@ git push origin main
 #### 5.1 Deploy Root Application
 
 ```bash
-cd infrastructure/charts/_root-apps
+cd platform/applications/parent
 
 # Apply the infrastructure application
 kubectl apply -f infrastructure-app.yaml
@@ -377,12 +405,49 @@ kubectl describe ingress nyc-fhv-ingress
 - **Security groups**: Restrictive network access rules
 - **TLS encryption**: HTTPS everywhere with ACM certificates
 - **Private ECR**: Container images stored in private repositories
+- **Kubernetes Network Policies**: Micro-segmentation within the cluster
 
 ### Secrets Management
 - **AWS Secrets Manager**: Database credentials stored securely
 - **CSI Driver**: Kubernetes secrets integration
 - **No hardcoded secrets**: All sensitive data externalized
 - **Rotation support**: Secrets can be rotated without code changes
+
+## 🔒 Network Security Policies
+
+The platform implements comprehensive Kubernetes Network Policies for micro-segmentation and defense in depth:
+
+### **Default Deny Policy**
+- **Deny All Traffic**: Blocks all ingress and egress traffic by default
+- **Namespace Isolation**: Prevents unauthorized cross-namespace communication
+
+### **Application-Specific Policies**
+
+#### **Frontend Network Policy**
+- **Ingress**: Allows traffic from ingress controllers and load balancers
+- **Egress**: Only allows communication to backend services
+- **Isolation**: Prevents direct database access
+
+#### **Backend Network Policy**
+- **Ingress**: Only accepts traffic from frontend services and ingress controllers
+- **Egress**: Only allows communication to database services
+- **API Protection**: Isolates backend from unnecessary network access
+
+#### **Database Network Policy**
+- **Ingress**: Only accepts connections from backend services
+- **No Egress**: Database pods cannot initiate outbound connections
+- **Data Protection**: Ensures database is only accessible by authorized services
+
+### **System Policies**
+- **DNS Resolution**: Allows DNS queries to kube-system namespace
+- **Ingress Controller**: Permits traffic from AWS Load Balancer Controller
+- **Monitoring**: Enables communication with Prometheus and monitoring services
+
+### **Benefits**
+- **Zero Trust**: No implicit trust between services
+- **Attack Surface Reduction**: Limits lateral movement in case of compromise
+- **Compliance**: Meets security requirements for production workloads
+- **Micro-segmentation**: Granular control over service-to-service communication
 
 ## 📊 Monitoring & Observability
 
@@ -447,7 +512,7 @@ docker-compose up --build
 
 ```bash
 # Delete ArgoCD applications
-kubectl delete -f infrastructure/charts/_root-apps/infrastructure-app.yaml
+kubectl delete -f platform/applications/parent/infrastructure-app.yaml
 
 # Delete ArgoCD namespace
 kubectl delete namespace argocd
@@ -460,11 +525,11 @@ kubectl delete namespace argocd
 kubectl delete ingress nyc-fhv-ingress
 
 # 2. Destroy Helm releases
-cd infrastructure/helm-release
+cd platform/helm-release
 terraform destroy
 
 # 3. Destroy AWS infrastructure
-cd infrastructure/_cluster
+cd platform/infrastructure
 terraform destroy
 ```
 

@@ -62,6 +62,7 @@ terraform.tfvars
 terraform.tfvars.json
 .terraformrc
 terraform.rc
+!terraform.tfvars
 
 # Python (if any scripts)
 __pycache__/
