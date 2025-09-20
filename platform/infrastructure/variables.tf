@@ -81,6 +81,9 @@ variable "eks" {
     kubernetes_version                       = string
     endpoint_public_access                   = bool
     enable_cluster_creator_admin_permissions = bool
+    enable_irsa                              = bool
+    create_security_group                    = bool
+    create_node_security_group               = bool
 
     eks_managed_node_groups = map(object({
       ec2 = object({
@@ -91,6 +94,12 @@ variable "eks" {
         desired_size   = number
       })
     }))
+
+    create_cloudwatch_log_group            = bool
+    cloudwatch_log_group_class             = string
+    cloudwatch_log_group_retention_in_days = number
+    cloudwatch_log_group_tags              = map(string)
+    enabled_log_types                      = list(string)
 
     addons = map(any)
     tags   = map(string)
@@ -129,14 +138,26 @@ variable "db" {
     create_db_parameter_group           = bool
     create_db_option_group              = bool
     iam_database_authentication_enabled = bool
-    create_monitoring_role              = bool
+    deletion_protection                 = bool
     db_name                             = string
     username                            = string
     password                            = string
     port                                = number
-    deletion_protection                 = bool
     security_group_tags                 = map(string)
-    tags                                = map(string)
+
+    ## RDS Cloudwatch Monitoring and Logging
+    create_monitoring_role                 = bool
+    cloudwatch_log_group_class             = string
+    cloudwatch_log_group_retention_in_days = number
+    create_cloudwatch_log_group            = bool
+    cloudwatch_log_group_skip_destroy      = bool
+    cloudwatch_log_group_tags              = map(string)
+    enabled_cloudwatch_logs_exports        = list(string)
+    database_insights_mode                 = string
+    monitoring_interval                    = number
+
+
+    tags = map(string)
   })
 }
 

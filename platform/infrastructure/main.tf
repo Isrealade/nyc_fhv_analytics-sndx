@@ -34,7 +34,7 @@ module "s3_bucket" {
 #########################
 module "vpc" {
   source  = "Isrealade/vpc/aws"
-  version = "2.1.0"
+  version = "2.2.0"
 
   name                 = var.vpc.name
   cidr                 = var.vpc.cidr
@@ -79,15 +79,36 @@ module "eks" {
   kubernetes_version                       = var.eks.kubernetes_version
   endpoint_public_access                   = var.eks.endpoint_public_access
   enable_cluster_creator_admin_permissions = var.eks.enable_cluster_creator_admin_permissions
+  enable_irsa                              = var.eks.enable_irsa
   vpc_id                                   = module.vpc.vpc_id
   subnet_ids                               = concat(module.vpc.public_subnet_ids, module.vpc.private_subnet_ids)
   control_plane_subnet_ids                 = module.vpc.private_subnet_ids
+  create_security_group                    = var.eks.create_security_group
+  create_node_security_group               = var.eks.create_node_security_group
   eks_managed_node_groups                  = var.eks.eks_managed_node_groups
+  addons                                   = var.eks.addons
 
-  addons = var.eks.addons
+  ### Rule to allow pods -> RDS
+  node_security_group_additional_rules = {
+    rds_postgres_ingress = {
+      description                   = "Allow pods to connect to RDS PostgreSQL"
+      protocol                      = "tcp"
+      from_port                     = 5432
+      to_port                       = 5432
+      type                          = "egress"
+      cidr_blocks                   = [module.vpc.cidr]
+      source_cluster_security_group = true
+    }
+  }
 
-  tags = merge(var.tags, var.eks.tags
-  )
+  ## EKS Cloudwatch Monitoring and Logging
+  create_cloudwatch_log_group            = var.eks.create_cloudwatch_log_group
+  cloudwatch_log_group_class             = var.eks.cloudwatch_log_group_class
+  cloudwatch_log_group_retention_in_days = var.eks.cloudwatch_log_group_retention_in_days
+  cloudwatch_log_group_tags              = var.eks.cloudwatch_log_group_tags
+  enabled_log_types                      = var.eks.enabled_log_types
+
+  tags = merge(var.tags, var.eks.tags)
 }
 
 #########################
@@ -128,50 +149,38 @@ module "ecr" {
 #########################
 # RDS
 #########################
-
-### RDS Security Group Rule
-resource "aws_security_group" "rds_sg" {
-  vpc_id     = module.vpc.vpc_id
-  depends_on = [module.vpc, module.eks]
-
-  tags = merge(var.tags, var.db.security_group_tags)
-}
-
-resource "aws_vpc_security_group_ingress_rule" "rds_sg" {
-  referenced_security_group_id = module.eks.node_security_group_id
-  security_group_id            = aws_security_group.rds_sg.id
-  from_port                    = var.db.port
-  ip_protocol                  = "tcp"
-  to_port                      = var.db.port
-}
-
-### RDS 
 module "db" {
   source = "terraform-aws-modules/rds/aws"
 
-  identifier        = var.db.identifier
-  engine            = var.db.engine
-  engine_version    = var.db.engine_version
-  instance_class    = var.db.instance_class
-  allocated_storage = var.db.allocated_storage
-  storage_type      = var.db.storage_type
-
-  create_db_instance        = var.db.create_db_instance
-  create_db_parameter_group = var.db.create_db_parameter_group
-  create_db_option_group    = var.db.create_db_option_group
-  vpc_security_group_ids    = [aws_security_group.rds_sg.id]
-
+  identifier                          = var.db.identifier
+  engine                              = var.db.engine
+  engine_version                      = var.db.engine_version
+  instance_class                      = var.db.instance_class
+  allocated_storage                   = var.db.allocated_storage
+  storage_type                        = var.db.storage_type
+  create_db_instance                  = var.db.create_db_instance
+  create_db_parameter_group           = var.db.create_db_parameter_group
+  create_db_option_group              = var.db.create_db_option_group
+  vpc_security_group_ids              = [aws_security_group.rds_sg.id]
   iam_database_authentication_enabled = var.db.iam_database_authentication_enabled
-  create_monitoring_role              = var.db.create_monitoring_role
-
-  db_subnet_group_name = module.vpc.db_subnet_group_name
+  db_subnet_group_name                = module.vpc.db_subnet_group_name
+  deletion_protection                 = var.db.deletion_protection
 
   db_name  = var.db.db_name
   username = var.db.username
   password = var.db.password
   port     = var.db.port
 
-  deletion_protection = false
+  ## RDS Cloudwatch Monitoring and Logging
+  create_monitoring_role                 = var.db.create_monitoring_role
+  cloudwatch_log_group_class             = var.db.cloudwatch_log_group_class
+  cloudwatch_log_group_retention_in_days = var.db.cloudwatch_log_group_retention_in_days
+  create_cloudwatch_log_group            = var.db.create_cloudwatch_log_group
+  cloudwatch_log_group_skip_destroy      = var.db.cloudwatch_log_group_skip_destroy
+  cloudwatch_log_group_tags              = var.db.cloudwatch_log_group_tags
+  enabled_cloudwatch_logs_exports        = var.db.enabled_cloudwatch_logs_exports
+  database_insights_mode                 = var.db.database_insights_mode
+  monitoring_interval                    = var.db.monitoring_interval
 
   tags = merge(var.tags, var.db.tags)
 }

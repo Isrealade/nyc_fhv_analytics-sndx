@@ -74,6 +74,9 @@ eks = {
   kubernetes_version                       = "1.33"
   endpoint_public_access                   = true
   enable_cluster_creator_admin_permissions = true
+  enable_irsa                              = true
+  create_security_group                    = true
+  create_node_security_group               = true
 
   # Managed Node Group configuration
   eks_managed_node_groups = {
@@ -86,6 +89,12 @@ eks = {
     }
   }
 
+  create_cloudwatch_log_group            = true
+  cloudwatch_log_group_class             = "STANDARD" ## or `INFREQUENT_ACCESS`
+  cloudwatch_log_group_retention_in_days = 7
+  cloudwatch_log_group_tags              = {}
+  enabled_log_types                      = ["audit", "api", "authenticator"]
+
   # Addons
   addons = {
     kube-proxy         = {}
@@ -94,7 +103,10 @@ eks = {
     coredns            = { preserve = false }
     metrics-server     = { preserve = false }
   }
+
+  tags = {}
 }
+
 # ===== ECR =====
 ecr = {
   repositories                           = ["frontend-service", "backend-service"]
@@ -119,10 +131,19 @@ db = {
   create_db_parameter_group           = false
   create_db_option_group              = false
   iam_database_authentication_enabled = false
-  create_monitoring_role              = false
   db_name                             = string
   port                                = 5432
   deletion_protection                 = false
+
+  create_monitoring_role                 = true
+  cloudwatch_log_group_class             = "STANDARD"
+  cloudwatch_log_group_retention_in_days = 7
+  create_cloudwatch_log_group            = true
+  cloudwatch_log_group_skip_destroy      = false
+  cloudwatch_log_group_tags              = {}
+  enabled_cloudwatch_logs_exports        = ["postgresql", "upgrade", "slowquery"]
+  database_insights_mode                 = "standard"
+  monitoring_interval                    = 60
 
   security_group_tags = {
     "app"     = "rds-db"
@@ -130,6 +151,7 @@ db = {
   }
   tags = {}
 }
+
 # ===== ACM =====
 acm = {
   domain_name       = "css.redeploy.online"
