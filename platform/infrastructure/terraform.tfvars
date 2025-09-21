@@ -38,8 +38,6 @@ vpc = {
   enable_dns_hostnames = true
   private_ip_map       = false
 
-  # public_subnet = var.vpc.public_subnet
-  # private_subnet = var.vpc.private_subnet
   public_subnet_count  = 3
   private_subnet_count = 3
   enable_nat           = true

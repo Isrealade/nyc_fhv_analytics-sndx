@@ -63,7 +63,7 @@ terraform.tfvars.json
 .terraformrc
 terraform.rc
 !terraform.tfvars
-testing/
+testing*
 
 # Python (if any scripts)
 __pycache__/

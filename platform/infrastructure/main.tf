@@ -36,15 +36,16 @@ module "vpc" {
   source  = "Isrealade/vpc/aws"
   version = "2.2.0"
 
-  name                 = var.vpc.name
-  cidr                 = var.vpc.cidr
+  name                 = local.vpc_name
+  cidr                 = local.vpc_cidr
   instance_tenancy     = var.vpc.instance_tenancy
   enable_dns_support   = var.vpc.enable_dns_support
   enable_dns_hostnames = var.vpc.enable_dns_hostnames
   private_ip_map       = var.vpc.private_ip_map
+  azs = local.azs
 
-  # public_subnet = var.vpc.public_subnet
-  # private_subnet = var.vpc.private_subnet
+  # private_subnet = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 4, k)]
+  # public_subnet  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 48)]
   public_subnet_count  = var.vpc.public_subnet_count
   private_subnet_count = var.vpc.private_subnet_count
 
@@ -62,12 +63,10 @@ module "vpc" {
 
   public_subnet_tags = {
     "kubernetes.io/role/elb"                        = "1"
-    "kubernetes.io/cluster/${var.eks.cluster_name}" = "shared"
   }
 
   private_subnet_tags = {
     "kubernetes.io/role/internal-elb"               = "1"
-    "kubernetes.io/cluster/${var.eks.cluster_name}" = "shared"
   }
 
   tags = merge(var.tags, var.vpc.tags)
@@ -89,8 +88,8 @@ module "eks" {
   vpc_id                                   = module.vpc.vpc_id
   subnet_ids                               = concat(module.vpc.public_subnet_ids, module.vpc.private_subnet_ids)
   control_plane_subnet_ids                 = module.vpc.private_subnet_ids
-  # create_security_group                    = var.eks.create_security_group
-  # create_node_security_group               = var.eks.create_node_security_group
+  create_security_group                    = var.eks.create_security_group
+  create_node_security_group               = var.eks.create_node_security_group
   # eks_managed_node_groups                  = var.eks.eks_managed_node_groups
   addons = var.eks.addons
   enable_auto_mode_custom_tags = false

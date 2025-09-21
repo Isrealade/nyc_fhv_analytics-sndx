@@ -117,6 +117,9 @@ cd platform/infrastructure
 # Initialize Terraform
 terraform init
 
+# Apply VPC first so its outputs are fully stored in state and also avoid eks error
+terraform apply -target=module.vpc
+
 # Review the plan (optional but recommended)
 terraform plan
 
