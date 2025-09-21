@@ -1,6 +1,8 @@
 # ===== Global =====
 region = "eu-north-1"
 
+account_id = "501818865030"
+partition  = "aws"
 
 tags = {
   Project     = "css-app"
@@ -46,12 +48,12 @@ vpc = {
 
   create_db_subnet     = true
   db_subnet_group_name = "css-subnet_group"
-  db_subnet_group_tags  = {}
+  db_subnet_group_tags = {}
 
   public_subnet_tags  = {}
   private_subnet_tags = {}
 
-  ingress = ["https", "postgres"]
+  ingress = ["https", "postgresql"]
   # custom_ingress = {}
 
   tags = {
@@ -72,15 +74,15 @@ eks = {
   create_node_security_group               = true
 
   # Managed Node Group configuration
-  eks_managed_node_groups = {
-    ec2 = {
-      ami_type       = "AL2023_x86_64_STANDARD"
-      instance_types = ["m5.xlarge"]
-      min_size       = 2
-      max_size       = 10
-      desired_size   = 2
-    }
-  }
+  # eks_managed_node_groups = {
+  #   example = {
+  #     ami_type       = "AL2023_x86_64_STANDARD"
+  #     instance_types = ["m6i.large"]
+  #     min_size       = 1
+  #     max_size       = 6
+  #     desired_size   = 2
+  #   }
+  # }
 
   create_cloudwatch_log_group            = true
   cloudwatch_log_group_class             = "STANDARD" ## or `INFREQUENT_ACCESS`
@@ -91,6 +93,7 @@ eks = {
   # Addons
   addons = {
     kube-proxy         = {}
+    eks-pod-identity-agent = { before_compute = true }
     vpc-cni            = { before_compute = true }
     aws-ebs-csi-driver = { preserve = false }
     coredns            = { preserve = false }

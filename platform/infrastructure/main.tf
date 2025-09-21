@@ -78,7 +78,7 @@ module "vpc" {
 #########################
 module "eks" {
   source     = "terraform-aws-modules/eks/aws"
-  version    = "~> 21.0"
+  version    = "21.3.1"
   depends_on = [module.vpc]
 
   name                                     = var.eks.cluster_name
@@ -89,10 +89,22 @@ module "eks" {
   vpc_id                                   = module.vpc.vpc_id
   subnet_ids                               = concat(module.vpc.public_subnet_ids, module.vpc.private_subnet_ids)
   control_plane_subnet_ids                 = module.vpc.private_subnet_ids
-  create_security_group                    = var.eks.create_security_group
-  create_node_security_group               = var.eks.create_node_security_group
-  eks_managed_node_groups                  = var.eks.eks_managed_node_groups
-  addons                                   = var.eks.addons
+  # create_security_group                    = var.eks.create_security_group
+  # create_node_security_group               = var.eks.create_node_security_group
+  # eks_managed_node_groups                  = var.eks.eks_managed_node_groups
+  addons = var.eks.addons
+  enable_auto_mode_custom_tags = false
+
+  ## Managed Node Group
+  eks_managed_node_groups = {
+    example = {
+      instance_types = ["m6i.large"]
+      ami_type       = "AL2023_x86_64_STANDARD"
+      min_size          = 2
+      max_size          = 5
+      desired_size      = 2
+    }
+  }
 
   ### Rule to allow pods -> RDS
   node_security_group_additional_rules = {

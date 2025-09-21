@@ -1,6 +1,15 @@
 ############################
 # Global
 ############################
+variable "account_id" {
+  type = string
+}
+
+variable "partition" {
+  type    = string
+  default = "aws"
+}
+
 variable "region" {
   description = "AWS region to deploy resources"
   type        = string
@@ -84,15 +93,13 @@ variable "eks" {
     create_security_group                    = bool
     create_node_security_group               = bool
 
-    eks_managed_node_groups = map(object({
-      ec2 = object({
-        ami_type       = string
-        instance_types = list(string)
-        min_size       = number
-        max_size       = number
-        desired_size   = number
-      })
-    }))
+    # eks_managed_node_groups = map(object({
+    #   ami_type       = string
+    #   instance_types = list(string)
+    #   min_size       = number
+    #   max_size       = number
+    #   desired_size   = number
+    # }))
 
     create_cloudwatch_log_group            = bool
     cloudwatch_log_group_class             = string
@@ -159,12 +166,12 @@ variable "db" {
 }
 
 variable "db_username" {
-  type = string
+  type      = string
   sensitive = true
 }
 
 variable "db_password" {
-  type = string
+  type      = string
   sensitive = true
 }
 
