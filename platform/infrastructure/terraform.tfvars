@@ -44,22 +44,15 @@ vpc = {
   single_nat           = true
   # one_nat_per_az = false
 
-  create_subnet     = true
-  subnet_group_name = "css-subnet_group"
-  subnet_group_tag  = {}
+  create_db_subnet     = true
+  db_subnet_group_name = "css-subnet_group"
+  db_subnet_group_tags  = {}
+
+  public_subnet_tags  = {}
+  private_subnet_tags = {}
 
   ingress = ["https", "postgres"]
   # custom_ingress = {}
-
-  public_subnet_tags = {
-    "kubernetes.io/role/elb"                            = "1"
-    "kubernetes.io/cluster/${var.vpc.eks_cluster_name}" = "shared"
-  }
-
-  private_subnet_tags = {
-    "kubernetes.io/role/internal-elb"                   = "1"
-    "kubernetes.io/cluster/${var.vpc.eks_cluster_name}" = "shared"
-  }
 
   tags = {
     Environment = "dev"
@@ -70,7 +63,7 @@ vpc = {
 
 # ===== EKS =====
 eks = {
-  eks_cluster_name                         = "my-cluster"
+  cluster_name                             = "my-cluster"
   kubernetes_version                       = "1.33"
   endpoint_public_access                   = true
   enable_cluster_creator_admin_permissions = true
@@ -80,7 +73,7 @@ eks = {
 
   # Managed Node Group configuration
   eks_managed_node_groups = {
-    example = {
+    ec2 = {
       ami_type       = "AL2023_x86_64_STANDARD"
       instance_types = ["m5.xlarge"]
       min_size       = 2
@@ -131,7 +124,7 @@ db = {
   create_db_parameter_group           = false
   create_db_option_group              = false
   iam_database_authentication_enabled = false
-  db_name                             = string
+  db_name                             = "fhv"
   port                                = 5432
   deletion_protection                 = false
 
@@ -150,6 +143,12 @@ db = {
     "Purpose" = "security group"
   }
   tags = {}
+}
+
+# ===== Secret Manager =====
+secret-manager = {
+  name        = "pg-db-secret"
+  description = "RDS Secret"
 }
 
 # ===== ACM =====

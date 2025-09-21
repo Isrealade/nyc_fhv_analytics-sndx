@@ -30,9 +30,8 @@ variable "s3" {
     create_kms_key      = bool
     key_rotation        = bool
     deletion_window     = number
-    environment         = string
-    project             = string
-    tags                = map(string)
+
+    tags = map(string)
   })
 }
 
@@ -140,8 +139,6 @@ variable "db" {
     iam_database_authentication_enabled = bool
     deletion_protection                 = bool
     db_name                             = string
-    username                            = string
-    password                            = string
     port                                = number
     security_group_tags                 = map(string)
 
@@ -159,6 +156,16 @@ variable "db" {
 
     tags = map(string)
   })
+}
+
+variable "db_username" {
+  type = string
+  sensitive = true
+}
+
+variable "db_password" {
+  type = string
+  sensitive = true
 }
 
 ############################

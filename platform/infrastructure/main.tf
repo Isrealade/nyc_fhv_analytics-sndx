@@ -60,9 +60,15 @@ module "vpc" {
   ingress = var.vpc.ingress
   # custom_ingress = var.vpc.custom_ingress
 
-  public_subnet_tags = var.vpc.public_subnet_tags
+  public_subnet_tags = {
+    "kubernetes.io/role/elb"                        = "1"
+    "kubernetes.io/cluster/${var.eks.cluster_name}" = "shared"
+  }
 
-  private_subnet_tags = var.vpc.private_subnet_tags
+  private_subnet_tags = {
+    "kubernetes.io/role/internal-elb"               = "1"
+    "kubernetes.io/cluster/${var.eks.cluster_name}" = "shared"
+  }
 
   tags = merge(var.tags, var.vpc.tags)
 }
@@ -161,14 +167,14 @@ module "db" {
   create_db_instance                  = var.db.create_db_instance
   create_db_parameter_group           = var.db.create_db_parameter_group
   create_db_option_group              = var.db.create_db_option_group
-  vpc_security_group_ids              = [aws_security_group.rds_sg.id]
+  vpc_security_group_ids              = [module.eks.node_security_group_id]
   iam_database_authentication_enabled = var.db.iam_database_authentication_enabled
   db_subnet_group_name                = module.vpc.db_subnet_group_name
   deletion_protection                 = var.db.deletion_protection
 
   db_name  = var.db.db_name
-  username = var.db.username
-  password = var.db.password
+  username = var.db_username
+  password = var.db_password
   port     = var.db.port
 
   ## RDS Cloudwatch Monitoring and Logging
@@ -198,8 +204,8 @@ resource "aws_secretsmanager_secret" "secret" {
 resource "aws_secretsmanager_secret_version" "secret" {
   secret_id = aws_secretsmanager_secret.secret.id
   secret_string = jsonencode({
-    PGUSER     = var.db.username
-    PGPASSWORD = var.db.password
+    PGUSER     = var.db_username
+    PGPASSWORD = var.db_password
   })
 }
 
