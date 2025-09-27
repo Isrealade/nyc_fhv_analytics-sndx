@@ -28,13 +28,3 @@ prometheus:
           resources:
             requests:
               storage: 2Gi
-
-# grafana:
-#   datasources:
-#     datasources.yaml:
-#       apiVersion: 1
-#       datasources:
-#         - name: Prometheus
-#           type: prometheus
-#           url: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
-#           access: proxy
