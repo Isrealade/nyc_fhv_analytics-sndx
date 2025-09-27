@@ -4,7 +4,7 @@ metadata:
   name: backend
   namespace: argocd
   annotations:
-    argocd-image-updater.argoproj.io/image-list: "backend=501818865030.dkr.ecr.us-east-1.amazonaws.com/backend"
+    argocd-image-updater.argoproj.io/image-list: "backend=501818865030.dkr.ecr.eu-north-1.amazonaws.com/backend"
     argocd-image-updater.argoproj.io/backend.update-strategy: digest
     argocd-image-updater.argoproj.io/write-back-method: git
 spec:
