@@ -1,32 +1,32 @@
 #########################
 # S3 Bucket
 #########################
-module "s3_bucket" {
-  source  = "Isrealade/s3-bucket/aws"
-  version = "1.1.2"
+# module "s3_bucket" {
+#   source  = "Isrealade/s3-bucket/aws"
+#   version = "1.1.2"
 
-  s3 = {
-    bucket              = var.s3.bucket_name
-    force_destroy       = var.s3.force_destroy
-    object_lock_enabled = var.s3.object_lock_enabled
-    acl                 = var.s3.acl
-  }
+#   s3 = {
+#     bucket              = var.s3.bucket_name
+#     force_destroy       = var.s3.force_destroy
+#     object_lock_enabled = var.s3.object_lock_enabled
+#     acl                 = var.s3.acl
+#   }
 
-  versioning = {
-    enabled    = var.s3.versioning_enabled
-    mfa_delete = var.s3.mfa_delete
-  }
+#   versioning = {
+#     enabled    = var.s3.versioning_enabled
+#     mfa_delete = var.s3.mfa_delete
+#   }
 
-  encryption = {
-    enabled         = var.s3.encryption_enabled
-    sse_algorithm   = var.s3.sse_algorithm
-    create_kms_key  = var.s3.create_kms_key
-    key_rotation    = var.s3.key_rotation
-    deletion_window = var.s3.deletion_window
-  }
+#   encryption = {
+#     enabled         = var.s3.encryption_enabled
+#     sse_algorithm   = var.s3.sse_algorithm
+#     create_kms_key  = var.s3.create_kms_key
+#     key_rotation    = var.s3.key_rotation
+#     deletion_window = var.s3.deletion_window
+#   }
 
-  tags = merge(var.tags, var.s3.tags)
-}
+#   tags = merge(var.tags, var.s3.tags)
+# }
 
 
 #########################
@@ -113,7 +113,6 @@ module "eks" {
       from_port                     = 5432
       to_port                       = 5432
       type                          = "egress"
-      cidr_blocks                   = [module.vpc.cidr]
       source_cluster_security_group = true
     }
   }
@@ -163,6 +162,31 @@ module "ecr" {
   tags = merge(var.tags, var.ecr.tags)
 }
 
+
+#########################
+# Secrets Manager
+#########################
+## Generate Random Password
+resource "random_password" "db" {
+  length  = 16
+  special = true
+}
+
+resource "aws_secretsmanager_secret" "secret" {
+  name        = var.secret-manager.name
+  description = var.secret-manager.description
+
+  depends_on = [module.eks]
+}
+
+resource "aws_secretsmanager_secret_version" "secret" {
+  secret_id = aws_secretsmanager_secret.secret.id
+  secret_string = jsonencode({
+    PGUSER     = var.db_username
+    PGPASSWORD = random_password.db.result
+  })
+}
+
 #########################
 # RDS
 #########################
@@ -185,7 +209,7 @@ module "db" {
 
   db_name  = var.db.db_name
   username = var.db_username
-  password = var.db_password
+  password = random_password.db.result
   port     = var.db.port
 
   ## RDS Cloudwatch Monitoring and Logging
@@ -199,25 +223,8 @@ module "db" {
   database_insights_mode                 = var.db.database_insights_mode
   monitoring_interval                    = var.db.monitoring_interval
 
+  depends_on = [ module.vpc, module.eks, aws_secretsmanager_secret_version.secret]
   tags = merge(var.tags, var.db.tags)
-}
-
-#########################
-# Secrets Manager
-#########################
-resource "aws_secretsmanager_secret" "secret" {
-  name        = "pg-db-secret"
-  description = "PostgreSQL credentials for backend"
-
-  depends_on = [module.eks]
-}
-
-resource "aws_secretsmanager_secret_version" "secret" {
-  secret_id = aws_secretsmanager_secret.secret.id
-  secret_string = jsonencode({
-    PGUSER     = var.db_username
-    PGPASSWORD = var.db_password
-  })
 }
 
 #########################

@@ -63,7 +63,7 @@ vpc = {
 
 # ===== EKS =====
 eks = {
-  cluster_name                             = "my-cluster"
+  cluster_name                             = "css-cluster"
   kubernetes_version                       = "1.33"
   endpoint_public_access                   = true
   enable_cluster_creator_admin_permissions = true
@@ -135,7 +135,7 @@ db = {
   create_cloudwatch_log_group            = true
   cloudwatch_log_group_skip_destroy      = false
   cloudwatch_log_group_tags              = {}
-  enabled_cloudwatch_logs_exports        = ["postgresql", "upgrade", "slowquery"]
+  enabled_cloudwatch_logs_exports        = ["postgresql", "upgrade"]
   database_insights_mode                 = "standard"
   monitoring_interval                    = 60
 
@@ -151,6 +151,8 @@ secret-manager = {
   name        = "pg-db-secret"
   description = "RDS Secret"
 }
+
+db_username = "postgres"
 
 # ===== ACM =====
 acm = {

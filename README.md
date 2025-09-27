@@ -127,7 +127,7 @@ terraform plan
 terraform apply
 ```
 
-**During `terraform apply`, you will be prompted to enter:**
+**During `terraform apply`, a random generated password will be created for the secret**
 - **Database Username**: The username for your RDS PostgreSQL instance
 - **Database Password**: The password for your RDS PostgreSQL instance
 

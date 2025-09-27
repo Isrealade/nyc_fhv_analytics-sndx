@@ -62,7 +62,7 @@ spec:
       port: 53
 
 ---
-## Network Policy to for Frontend
+## Network Policy for Frontend
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -86,7 +86,7 @@ spec:
               role: backend 
 
 ---
-## Network Policy to for Backend
+## Network Policy for Backend
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

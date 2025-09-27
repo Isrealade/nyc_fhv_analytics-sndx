@@ -6,7 +6,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: alb
     #ACM certificate for HTTPS
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-north-1:501818865030:certificate/05961a2e-d26f-4b5f-975e-f78659ecc8af
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-north-1:501818865030:certificate/59e58413-22b1-4279-8a0d-43fedaa36987
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/ssl-redirect: '443'
     alb.ingress.kubernetes.io/target-type: ip

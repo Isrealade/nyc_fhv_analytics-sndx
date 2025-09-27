@@ -5,7 +5,30 @@ resource "aws_iam_policy" "secret_manager_policy" {
   name        = "secret-manager"
   path        = "/"
   description = "Policy for cluster secrets"
-  policy      = file("${path.module}/policies/secret-manager.json")
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:BatchGetSecretValue",
+          "secretsmanager:ListSecrets"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = [
+          "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:pg-db-secret*"
+        ]
+      }
+    ]
+  })
 }
 
 resource "aws_iam_role" "secret_manager" {
